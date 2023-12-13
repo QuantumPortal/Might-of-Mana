@@ -1,9 +1,25 @@
+local players = game:GetService("Players")
+
+players.PlayerAdded:Connect(function(player)
+    player.CharacterAppearanceLoaded:Connect(function(character)
+        print("Fla!")
+    end)
+end)
+
+
+
+
+
+
+
+
+--[[
 local balingus = game.ReplicatedStorage.Shared.balingus
 local pazingus = game.ReplicatedStorage.Shared.pazingus
-local players = game:GetService("Players")
+
 local TweenService = game:GetService("TweenService")
 print("Hello world, from server!")
---[[
+
 function createHaloPart(player,angle,tilt)
     local haloPart = Instance.new("Part")
     haloPart.Color = Color3.new(0.945098, 0.576470, 0.827450)
@@ -19,7 +35,6 @@ function createHaloPart(player,angle,tilt)
 
     
 end
-]]--
 
 function toggleHalo(player)
     player:SetAttribute("HaloDeploy",not player:GetAttribute("HaloDeploy"))
@@ -88,7 +103,7 @@ end
 players.PlayerAdded:Connect(onJoin)
 balingus.OnServerEvent:Connect(haloRender)
 pazingus.OnServerEvent:Connect(toggleHalo)
-
+]]--
 
 
 
