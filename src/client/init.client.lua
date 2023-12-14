@@ -14,6 +14,7 @@ local camera = workspace.Camera
 --local nbart = workspace:FindFirstChild("nbart") or workspace:WaitForChild("nbart")
 --local feedo = workspace:FindFirstChild("feedo") or workspace:WaitForChild("feedo")
 --local blo = workspace:FindFirstChild("BLO") or workspace:WaitForChild("BLO")
+--bolobolo
 local cameraTilt = 0
 local baseWalkSpeed = 9
 
