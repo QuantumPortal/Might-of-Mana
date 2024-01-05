@@ -1,7 +1,10 @@
+
+local player = game:GetService("Players").LocalPlayer
+
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService('TweenService')
-local player = game:GetService("Players").LocalPlayer
+
 local mouse = player:GetMouse()
 local character = player.Character or player.CharacterAdded:Wait()
 local rootPart = character:FindFirstChild("HumanoidRootPart") or character:WaitForChild("HumanoidRootPart")
@@ -11,11 +14,9 @@ local waist = upperTorso:FindFirstChild("Waist") or upperTorso:WaitForChild("Wai
 local head = character:FindFirstChild("Head") or character:WaitForChild("Head")
 local neck = head:FindFirstChild("Neck") or head:WaitForChild("Neck")
 local camera = workspace.Camera
-local nbart = workspace:FindFirstChild("nbart") or workspace:WaitForChild("nbart")
-local feedo = workspace:FindFirstChild("feedo") or workspace:WaitForChild("feedo")
-local blo = workspace:FindFirstChild("BLO") or workspace:WaitForChild("BLO")
 local cameraTilt = 0
 local baseWalkSpeed = 9
+local fireball = game.ReplicatedStorage.Shared:FindFirstChild("Fireball") or game.ReplicatedStorage.Shared:WaitForChild("Fireball")
 
 local cameraTween = TweenInfo.new(
 	0.7,
@@ -37,22 +38,23 @@ local torsoTween = TweenInfo.new(
 
 humanoid.WalkSpeed = baseWalkSpeed
 humanoid.AutoRotate = false
---[[
-local function onInputBegan(input, _gameProcessed)
+
+game:GetService("UserInputService").InputBegan:Connect(function(input, _gameProcessed)
 	if input.KeyCode == Enum.KeyCode.E then
-		print("balingus." .. player.Name)
-		balingus:FireServer();
+		fireball:FireServer(player);
 	elseif input.KeyCode == Enum.KeyCode.Q then
-		print("pazingus." .. player.Name)
-		pazingus:FireServer();
+		player:SetAttribute("Mana",player:GetAttribute("Mana") - 20)
+		player:SetAttribute("Shield",player:GetAttribute("Shield") - 10)
 	end
-end
-local function haloCheck(step)
-	balingus:FireServer(step)
-end
-]]--
+end)
+
+
+
 
 --UserInputService.InputBegan:Connect(onInputBegan)
+
+
+
 
 
 
@@ -62,11 +64,13 @@ RunService.RenderStepped:Connect(function(delay)
 	
 	waist.C0 = waist.C0:Lerp(CFrame.new(waist.C0.Position) * CFrame.fromEulerAnglesXYZ(0.45*x,0,0.45*z),0.35)
 	neck.C0 = neck.C0:Lerp(CFrame.new(neck.C0.Position) * CFrame.fromEulerAnglesXYZ(0.55*x,0,0.55*z), 0.35)
-	local moveAngle = math.deg(rootPart.CFrame.LookVector:Angle(humanoid.MoveDirection,rootPart.CFrame.LookVector))
-	if moveAngle > 90 then
-		moveAngle = 180 - moveAngle
+	local moveAngle = rootPart.CFrame.LookVector:Angle(humanoid.MoveDirection,rootPart.CFrame.LookVector)
+	if moveAngle > math.pi/2 then
+		moveAngle = math.pi - moveAngle
 	end
-	TweenService:Create(waist,torsoTween, {C0 = waist.C0 * CFrame.fromEulerAnglesXYZ(math.sign(((CFrame.fromEulerAnglesXYZ(0,math.rad(90),0) * rootPart.CFrame).LookVector:Cross(humanoid.MoveDirection)).Y) * math.cos(math.rad(moveAngle))* (CFrame.fromEulerAnglesXYZ(0,math.rad(90),0) * rootPart.CFrame).LookVector:Angle(humanoid.MoveDirection,rootPart.CFrame.LookVector)/(4),0,math.sign((rootPart.CFrame.LookVector:Cross(humanoid.MoveDirection)).Y) * rootPart.CFrame.LookVector:Angle(humanoid.MoveDirection,rootPart.CFrame.LookVector)/5 * math.sin(math.rad(moveAngle)))}):Play()
+	TweenService:Create(waist,torsoTween, {C0 = waist.C0 * CFrame.fromEulerAnglesXYZ(math.sign(((CFrame.fromEulerAnglesXYZ(0,math.pi/2,0) * rootPart.CFrame).LookVector:Cross(humanoid.MoveDirection)).Y) * math.cos(moveAngle) * (CFrame.fromEulerAnglesXYZ(0,math.pi/2,0) * rootPart.CFrame).LookVector:Angle(humanoid.MoveDirection,rootPart.CFrame.LookVector)/(4),0,math.sign((rootPart.CFrame.LookVector:Cross(humanoid.MoveDirection)).Y) * rootPart.CFrame.LookVector:Angle(humanoid.MoveDirection,rootPart.CFrame.LookVector)/5 * math.sin(moveAngle))
+
+	}):Play()
 	
 	
 	--blo.CFrame *= CFrame.fromEulerAnglesXYZ(0,0,math.sign((rootPart.CFrame.LookVector:Cross(humanoid.MoveDirection)).Y)* pla * math.sin(math.rad(horse)))
@@ -118,7 +122,7 @@ RunService.RenderStepped:Connect(function(delay)
 	
 
 	
-	
+	--[[
 	if UserInputService:IsKeyDown(Enum.KeyCode.A) and UserInputService:IsKeyDown(Enum.KeyCode.D) then
 		cameraTilt *= 0.95
 	elseif UserInputService:IsKeyDown(Enum.KeyCode.A) then
@@ -128,7 +132,7 @@ RunService.RenderStepped:Connect(function(delay)
 	else
 		cameraTilt *= 0.95
 	end
-	
+	]]--
 	
 	TweenService:Create(camera,cameraTween, { CFrame = camera.CFrame * CFrame.Angles(0,0,math.rad(cameraTilt))}):Play()
 	
@@ -145,7 +149,11 @@ RunService.RenderStepped:Connect(function(delay)
 	end 
 
 	
+
+
 	camera.FieldOfView = 70 - 9 + humanoid.WalkSpeed
+
+	
 	--Joint.C0 = CFrame.lookAt(Joint.C0.Position, Vector3.new(Mouse.Hit.Position.X, Joint.C0.Position.Y, math.min(-Joint.C0.LookVector.Z, Mouse.Hit.Position.Z))) * if RigType == "R6" then CFrame.Angles(math.pi / 2, math.pi, 0) else CFrame.Angles(0, 0, 0)
 end)
 
@@ -157,5 +165,16 @@ game:GetService("RunService").RenderStepped:Connect(function()
 end)
 ]]--
 
+
+
 print("glorf")
+
+
+
+player.CharacterAdded:Connect(function(character)
+	player.CharacterAppearanceLoaded:Connect(function()
+		
+	end)
+end)
+
 
