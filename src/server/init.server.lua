@@ -1,17 +1,39 @@
 local players = game:GetService("Players")
+local PolicyService = game:GetService("PolicyService")
+local fireball = game.ReplicatedStorage.Shared:FindFirstChild("Fireball") or game.ReplicatedStorage.Shared:WaitForChild("Fireball")
+
 
 players.PlayerAdded:Connect(function(player)
+
+    player:SetAttribute("MaxShield",100)
+    player:SetAttribute("Shield",100)
+
+    player:SetAttribute("MaxMana",100)
+    player:SetAttribute("Mana",100)
+    
+	
+
     player.CharacterAppearanceLoaded:Connect(function(character)
-        print("Fla!")
+        --character.Animate.walk.WalkAnim.AnimationId = "rbxassetid://15872307313"
+		--character.Animate.run.RunAnim.AnimationId = "rbxassetid://15872263018"
     end)
+
+    
 end)
 
+--[[
+fireball.OnServerEvent:Connect(function(player)
+    
+    print(player:GetAttribute("FireballCooldown"))
 
+    print(tick(3))
 
-
-
-
-
+    if tick() - player:GetAttribute("FireballCooldown") >= 5000 then
+        players:SetAttribute("FireballCoolDown",tick())
+        print("flurg")
+    end
+end)
+]]--
 
 --[[
 local balingus = game.ReplicatedStorage.Shared.balingus
