@@ -1,6 +1,6 @@
 local players = game:GetService("Players")
 local PolicyService = game:GetService("PolicyService")
-local fireball = game.ReplicatedStorage.Shared:FindFirstChild("Fireball") or game.ReplicatedStorage.Shared:WaitForChild("Fireball")
+--local fireball = game.ReplicatedStorage.Shared:FindFirstChild("Fireball") or game.ReplicatedStorage.Shared:WaitForChild("Fireball")
 
 
 players.PlayerAdded:Connect(function(player)
