@@ -44,18 +44,15 @@ RunService.RenderStepped:Connect(function(delay)
 	--CameraTilt
 	if UserInputService:IsKeyDown(Enum.KeyCode.A) and UserInputService:IsKeyDown(Enum.KeyCode.D) then
 		cameraTilt *= 0.93
-		cameraTilt = math.sign(cameraTilt) * math.floor(math.abs(cameraTilt)*100)/100
 	elseif UserInputService:IsKeyDown(Enum.KeyCode.A) then
-		print("fwaa")
 		cameraTilt += (14-cameraTilt)/8
-		cameraTilt = math.ceil(cameraTilt*100)/100
 	elseif UserInputService:IsKeyDown(Enum.KeyCode.D) then
 		cameraTilt += (-14-cameraTilt)/8
-		cameraTilt = math.floor(cameraTilt*100)/100
 	else
 		cameraTilt *= 0.93
-		cameraTilt = math.sign(cameraTilt) * math.floor(math.abs(cameraTilt)*100)/100
 	end
+	cameraTilt = math.sign(cameraTilt) * math.floor(math.abs(cameraTilt)*100)/100
+	print(cameraTilt)
 	--Sprint speedup/slowdown
 	if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
 		if humanoid.WalkSpeed < baseWalkSpeed + 10 then
