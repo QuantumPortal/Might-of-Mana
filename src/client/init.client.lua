@@ -1,7 +1,6 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService('TweenService')
 
 local characterFunctions = require(script.character)
 local cameraFunctions = require(script.camera)
@@ -45,14 +44,14 @@ RunService.RenderStepped:Connect(function(delay)
 	if UserInputService:IsKeyDown(Enum.KeyCode.A) and UserInputService:IsKeyDown(Enum.KeyCode.D) then
 		cameraTilt *= 0.93
 	elseif UserInputService:IsKeyDown(Enum.KeyCode.A) then
-		cameraTilt += (14-cameraTilt)/8
+		cameraTilt += (15-cameraTilt)/8
 	elseif UserInputService:IsKeyDown(Enum.KeyCode.D) then
-		cameraTilt += (-14-cameraTilt)/8
+		cameraTilt += (-15-cameraTilt)/8
 	else
 		cameraTilt *= 0.93
 	end
 	cameraTilt = math.sign(cameraTilt) * math.floor(math.abs(cameraTilt)*100)/100
-	print(cameraTilt)
+	
 	--Sprint speedup/slowdown
 	if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
 		if humanoid.WalkSpeed < baseWalkSpeed + 10 then
