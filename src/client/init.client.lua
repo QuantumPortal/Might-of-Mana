@@ -1,32 +1,30 @@
-
 local Players = game:GetService("Players")
-local player = game:GetService("Players").LocalPlayer
-
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService('TweenService')
 
-local mouse = player:GetMouse()
+local characterFunctions = require(script.character)
+local cameraFunctions = require(script.camera)
+
+local player = Players.LocalPlayer
+
+
 local character = player.Character or player.CharacterAdded:Wait()
-local rootPart = character:FindFirstChild("HumanoidRootPart") or character:WaitForChild("HumanoidRootPart")
 local humanoid = character:FindFirstChild("Humanoid") or character:WaitForChild("Humanoid")
 local camera = workspace.Camera
 local cameraTilt = 0
 local baseWalkSpeed = 9
 
-local characterFunctions = require(script.character)
-local cameraFunctions = require(script.camera)
+local baseFOV = 70
+
 --local fireball = game.ReplicatedStorage.Shared:FindFirstChild("Fireball") or game.ReplicatedStorage.Shared:WaitForChild("Fireball")
 
-
-
-game:GetService("UserInputService").InputBegan:Connect(function(input, _gameProcessed)
+UserInputService.InputBegan:Connect(function(input, _gameProcessed)
 	if input.KeyCode == Enum.KeyCode.E then
 		--fireball:FireServer(player);
 	elseif input.KeyCode == Enum.KeyCode.Q then
 		player:SetAttribute("Mana",player:GetAttribute("Mana") - 20)
 		player:SetAttribute("Shield",player:GetAttribute("Shield") - 10)
-	end	
+	end
 end)
 
 humanoid.WalkSpeed = baseWalkSpeed
@@ -39,29 +37,22 @@ player.CharacterAdded:Connect(function(character)
 end)
 
 RunService.RenderStepped:Connect(function(delay)
+
+	--Held Key section
+
+	--CameraTilt
 	if UserInputService:IsKeyDown(Enum.KeyCode.A) and UserInputService:IsKeyDown(Enum.KeyCode.D) then
 		cameraTilt *= 0.93
-		cameraTilt = math.sign(cameraTilt) * math.floor(math.abs(cameraTilt)*100)/100
 	elseif UserInputService:IsKeyDown(Enum.KeyCode.A) then
-		print("fwaa")
-		cameraTilt += (14-cameraTilt)/8
-		cameraTilt = math.ceil(cameraTilt*100)/100
+		cameraTilt += (15-cameraTilt)/8
 	elseif UserInputService:IsKeyDown(Enum.KeyCode.D) then
-		cameraTilt += (-14-cameraTilt)/8
-		cameraTilt = math.floor(cameraTilt*100)/100
+		cameraTilt += (-15-cameraTilt)/8
 	else
 		cameraTilt *= 0.93
-		cameraTilt = math.sign(cameraTilt) * math.floor(math.abs(cameraTilt)*100)/100
 	end
-	
+	cameraTilt = math.sign(cameraTilt) * math.floor(math.abs(cameraTilt)*100)/100
 
-	print(cameraTilt)
-	if player.Character.Humanoid and player.Character.Humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
-		characterFunctions.DirectionalTilt(player)
-		characterFunctions.LookToMouse(player)
-		cameraFunctions.CameraTilt(camera, cameraTilt)
-	end
-	
+	--Sprint speedup/slowdown
 	if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
 		if humanoid.WalkSpeed < baseWalkSpeed + 10 then
 			humanoid.WalkSpeed += (baseWalkSpeed + 10 - humanoid.WalkSpeed)/6
@@ -70,41 +61,20 @@ RunService.RenderStepped:Connect(function(delay)
 		if humanoid.WalkSpeed > baseWalkSpeed then
 			humanoid.WalkSpeed -= (humanoid.WalkSpeed - baseWalkSpeed)/6
 		end
-		
-	end 
-	camera.FieldOfView = 70 - 9 + humanoid.WalkSpeed
+	end
 
+
+	if humanoid and humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
+		characterFunctions.DirectionalTilt(player)
+		characterFunctions.LookToMouse(player)
+		cameraFunctions.CameraTilt(camera, cameraTilt)
+		cameraFunctions.UpdateFOV(camera,baseFOV,humanoid.WalkSpeed - baseWalkSpeed)
+	end
 end)
 
 
-
-
---[[
-player.CharacterAdded:Connect(function(character)
-	print("fla")
-	--[[
-	player.CharacterAppearanceLoaded:Connect(function()
-		print("bla")
-		RunService.RenderStepped:Connect(LoadedRStepLoop())
-	end)
-	
+humanoid.Died:Connect(function()
+	cameraFunctions.UpdateFOV(camera,baseFOV,0)
 end)
-]]--
-
---[[
-game:GetService("RunService").RenderStepped:Connect(function()
-    if humanoid.WalkSpeed > 16 or isRunning == true then --or whatever you call it when you run
-              player.Character.Animate.walk.WalkAnim.AnimationId = "rbxassetid://"..animId
-    end
-end)
-]]--
-
-
 
 print("glorf")
-
-
-
-
-
-

@@ -2,7 +2,7 @@ local cameraFunctions = {}
 
 local TweenService = game:GetService('TweenService')
 local cameraTween = TweenInfo.new(
-	0.1,
+	0.375,
 	Enum.EasingStyle.Linear,
 	Enum.EasingDirection.In,
 	0,
