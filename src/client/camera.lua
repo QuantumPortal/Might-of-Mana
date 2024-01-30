@@ -9,8 +9,12 @@ local cameraTween = TweenInfo.new(
 	false,
 	0
 )
-local previousCameraTilt = 0
 
+function cameraFunctions.UpdateFOV(camera,base,speed)
+	camera.FieldOfView = base + speed
+end
+
+local previousCameraTilt = 0
 function cameraFunctions.CameraTilt(camera,cameraTilt)
     TweenService:Create(camera,cameraTween, { CFrame = camera.CFrame * CFrame.Angles(0,0,math.rad(cameraTilt - previousCameraTilt))}):Play()
     previousCameraTilt = cameraTilt
