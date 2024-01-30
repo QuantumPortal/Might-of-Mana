@@ -26,7 +26,7 @@ players.PlayerAdded:Connect(function(player)
     
 end)
 
-
+--[[
 RunService.Stepped:Connect(function(_currentTime, deltaTime)
     for _, player in players:GetPlayers() do
         player:SetAttribute("BonusRegen", (player:GetAttribute("BonusRegenCap") - player:GetAttribute("BonusRegen"))/10000 * deltaTime ) 
@@ -48,6 +48,7 @@ RunService.Stepped:Connect(function(_currentTime, deltaTime)
         end)
     end
 end)
+]]--
 
 --[[
 fireball.OnServerEvent:Connect(function(player)
