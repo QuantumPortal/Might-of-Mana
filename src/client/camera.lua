@@ -16,8 +16,4 @@ function cameraFunctions.CameraTilt(camera,cameraTilt)
     previousCameraTilt = cameraTilt
 end
 
-function cameraFunctions.UpdateFOV(camera,base,excess_speed)
-    camera.FieldOfView = base + excess_speed
-end
-
 return cameraFunctions

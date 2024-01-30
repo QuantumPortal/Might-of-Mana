@@ -1,7 +1,7 @@
 local players = game:GetService("Players")
 local PolicyService = game:GetService("PolicyService")
+local RunService = game:GetService("RunService")
 --local fireball = game.ReplicatedStorage.Shared:FindFirstChild("Fireball") or game.ReplicatedStorage.Shared:WaitForChild("Fireball")
-
 
 players.PlayerAdded:Connect(function(player)
 
@@ -11,6 +11,11 @@ players.PlayerAdded:Connect(function(player)
     player:SetAttribute("MaxMana",100)
     player:SetAttribute("Mana",100)
     
+    player:SetAttribute("LastMana",1)
+    player:SetAttribute("BaseRegen",0)
+    player:SetAttribute("BonusRegen",0)
+    player:SetAttribute("BonusRegenCap",20)
+
 	
 
     player.CharacterAppearanceLoaded:Connect(function(character)
@@ -19,6 +24,29 @@ players.PlayerAdded:Connect(function(player)
     end)
 
     
+end)
+
+
+RunService.Stepped:Connect(function(_currentTime, deltaTime)
+    for _, player in players:GetPlayers() do
+        player:SetAttribute("BonusRegen", (player:GetAttribute("BonusRegenCap") - player:GetAttribute("BonusRegen"))/10000 * deltaTime ) 
+        player:SetAttribute(
+            "Mana", 
+            player:GetAttribute("Mana") + player:GetAttribute("BaseRegen") + player:GetAttribute("BonusRegen") 
+        )
+        if player:GetAttribute("Mana") > player:GetAttribute("MaxMana") then
+            player:SetAttribute("Mana", player:GetAttribute("MaxMana"))
+        end
+
+        player:GetAttributeChangedSignal("Mana"):Connect(function()
+            local value = player:GetAttribute("Mana") / player:GetAttribute("MaxMana")
+            if value < player:GetAttribute("LastMana") then
+                player:SetAttribute("BonusRegen",0)
+                print("Smeeth")
+            end
+            player:SetAttribute("LastMana",value)
+        end)
+    end
 end)
 
 --[[

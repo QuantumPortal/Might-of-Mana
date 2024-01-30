@@ -1,7 +1,6 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService('TweenService')
 
 local characterFunctions = require(script.character)
 local cameraFunctions = require(script.camera)
@@ -25,7 +24,7 @@ UserInputService.InputBegan:Connect(function(input, _gameProcessed)
 	elseif input.KeyCode == Enum.KeyCode.Q then
 		player:SetAttribute("Mana",player:GetAttribute("Mana") - 20)
 		player:SetAttribute("Shield",player:GetAttribute("Shield") - 10)
-	end	
+	end
 end)
 
 humanoid.WalkSpeed = baseWalkSpeed
@@ -44,18 +43,15 @@ RunService.RenderStepped:Connect(function(delay)
 	--CameraTilt
 	if UserInputService:IsKeyDown(Enum.KeyCode.A) and UserInputService:IsKeyDown(Enum.KeyCode.D) then
 		cameraTilt *= 0.93
-		cameraTilt = math.sign(cameraTilt) * math.floor(math.abs(cameraTilt)*100)/100
 	elseif UserInputService:IsKeyDown(Enum.KeyCode.A) then
-		print("fwaa")
-		cameraTilt += (14-cameraTilt)/8
-		cameraTilt = math.ceil(cameraTilt*100)/100
+		cameraTilt += (15-cameraTilt)/8
 	elseif UserInputService:IsKeyDown(Enum.KeyCode.D) then
-		cameraTilt += (-14-cameraTilt)/8
-		cameraTilt = math.floor(cameraTilt*100)/100
+		cameraTilt += (-15-cameraTilt)/8
 	else
 		cameraTilt *= 0.93
-		cameraTilt = math.sign(cameraTilt) * math.floor(math.abs(cameraTilt)*100)/100
 	end
+	cameraTilt = math.sign(cameraTilt) * math.floor(math.abs(cameraTilt)*100)/100
+
 	--Sprint speedup/slowdown
 	if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
 		if humanoid.WalkSpeed < baseWalkSpeed + 10 then
@@ -65,9 +61,9 @@ RunService.RenderStepped:Connect(function(delay)
 		if humanoid.WalkSpeed > baseWalkSpeed then
 			humanoid.WalkSpeed -= (humanoid.WalkSpeed - baseWalkSpeed)/6
 		end
-	end 
+	end
 
-	
+
 	if humanoid and humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
 		characterFunctions.DirectionalTilt(player)
 		characterFunctions.LookToMouse(player)
@@ -82,9 +78,3 @@ humanoid.Died:Connect(function()
 end)
 
 print("glorf")
-
-
-
-
-
-
