@@ -3,52 +3,133 @@ local PolicyService = game:GetService("PolicyService")
 local RunService = game:GetService("RunService")
 --local fireball = game.ReplicatedStorage.Shared:FindFirstChild("Fireball") or game.ReplicatedStorage.Shared:WaitForChild("Fireball")
 
+local test = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Test")
+
+local function numValueGeneric(parent,name)
+    local thing = Instance.new("NumberValue")
+    thing.Parent = parent
+    thing.Name = name
+end
+
+
+
+test.OnServerEvent:Connect(function(player)
+    
+    if player.CoreStats.Mana.Value >= 30 then
+        player.CoreStats.Mana.Value -= 30
+        local smelvin = Instance.new("ParticleEmitter")
+
+        smelvin.Texture = "rbxassetid://14864667431"
+        smelvin.Parent = player.Character.HumanoidRootPart
+
+        tick.wait(3)
+        smelvin:Destroy()
+    end
+end)
+
 players.PlayerAdded:Connect(function(player)
 
-    player:SetAttribute("MaxShield",100)
-    player:SetAttribute("Shield",100)
-
-    player:SetAttribute("MaxMana",100)
-    player:SetAttribute("Mana",100)
     
-    player:SetAttribute("LastMana",1)
-    player:SetAttribute("BaseRegen",0)
-    player:SetAttribute("BonusRegen",0)
-    player:SetAttribute("BonusRegenCap",20)
 
 	
 
     player.CharacterAppearanceLoaded:Connect(function(character)
+        local folder = Instance.new("Folder")
+        folder.Name = "CoreStats"
+        folder.Parent = player
+
+        numValueGeneric(folder,"Mana")
+        numValueGeneric(folder,"MaxMana")
+        numValueGeneric(folder,"BaseManaRegen")
+        numValueGeneric(folder,"BonusManaRegen")
+        numValueGeneric(folder,"Shield")
+        numValueGeneric(folder,"MaxShield")
+
+        folder.Mana.Value = 100
+        folder.MaxMana.Value = 100
+        folder.BaseManaRegen.Value = 5
+        folder.Shield.Value = 100
+        folder.MaxShield.Value = 100
+
         --character.Animate.walk.WalkAnim.AnimationId = "rbxassetid://15872307313"
 		--character.Animate.run.RunAnim.AnimationId = "rbxassetid://15872263018"
     end)
 
+    --player:GetAttributeChangedSignal("Mana"):Connect(function()
+        --[[
+        local value = player:GetAttribute("Mana") / player:GetAttribute("MaxMana")
+
+        print(value,player:GetAttribute("LastMana"))
+        if value < player:GetAttribute("LastMana") then
+            player:SetAttribute("BonusRegen",0)
+        end
+        player:SetAttribute("LastMana",value)
+        ]]--
+    --end)
     
 end)
 
 --[[
+while true do
+    task.wait(0.5)
+    for _, player in players:GetPlayers() do
+        print(player:GetAttribute("Mana"))
+        player:SetAttribute("Mana",player:GetAttribute("Mana")+0.1)
+        print(player:GetAttribute("Mana"))
+    end
+end
+]]--
 RunService.Stepped:Connect(function(_currentTime, deltaTime)
     for _, player in players:GetPlayers() do
-        player:SetAttribute("BonusRegen", (player:GetAttribute("BonusRegenCap") - player:GetAttribute("BonusRegen"))/10000 * deltaTime ) 
+        if player.HasAppearanceLoaded then
+            local CoreStats = player:WaitForChild("CoreStats")
+            local Mana = CoreStats:WaitForChild("Mana")
+            local MaxMana = CoreStats:WaitForChild("MaxMana")
+            local BaseManaRegen = CoreStats:WaitForChild("BaseManaRegen")
+            local BonusManaRegen = CoreStats:WaitForChild("BonusManaRegen")
+            local Shield = CoreStats:WaitForChild("Shield")
+            local MaxShield = CoreStats:WaitForChild("MaxShield")
+            
+
+            print(Mana.Value)
+            Mana.Value += (BaseManaRegen.Value + BonusManaRegen.Value ) * deltaTime 
+
+
+
+            if Shield.Value > MaxShield.Value then
+                Shield.Value = MaxShield.Value
+            elseif Shield.Value < 0 then
+                Shield.Value = 0
+            end
+            if Mana.Value > MaxMana.Value then
+                Mana.Value = MaxMana.Value
+            elseif Mana.Value < 0 then
+                Mana.Value = 0
+            end
+        end
+    end
+end)
+    
+        --[[
+        task.wait(1)
+        local agra = player:GetAttribute("Mana") + 5
+        print(player:GetAttribute("Mana"))
+        player:SetAttribute("Mana",agra)
+        ]]--
+
+        
+    
+        --[[
+        player:SetAttribute("BonusRegen", (player:GetAttribute("BonusRegenCap") - player:GetAttribute("BonusRegen"))/100000 * deltaTime ) 
         player:SetAttribute(
             "Mana", 
-            player:GetAttribute("Mana") + player:GetAttribute("BaseRegen") + player:GetAttribute("BonusRegen") 
+            player:GetAttribute("Mana") + player:GetAttribute("BaseRegen")/100000 * deltaTime + player:GetAttribute("BonusRegen") 
         )
         if player:GetAttribute("Mana") > player:GetAttribute("MaxMana") then
             player:SetAttribute("Mana", player:GetAttribute("MaxMana"))
         end
+        ]]--
 
-        player:GetAttributeChangedSignal("Mana"):Connect(function()
-            local value = player:GetAttribute("Mana") / player:GetAttribute("MaxMana")
-            if value < player:GetAttribute("LastMana") then
-                player:SetAttribute("BonusRegen",0)
-                print("Smeeth")
-            end
-            player:SetAttribute("LastMana",value)
-        end)
-    end
-end)
-]]--
 
 --[[
 fireball.OnServerEvent:Connect(function(player)

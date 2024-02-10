@@ -17,13 +17,17 @@ local baseWalkSpeed = 9
 local baseFOV = 70
 
 --local fireball = game.ReplicatedStorage.Shared:FindFirstChild("Fireball") or game.ReplicatedStorage.Shared:WaitForChild("Fireball")
+local test = game.ReplicatedStorage.Remotes:WaitForChild("Test")
+
+local CoreStats = player:WaitForChild("CoreStats")
+local Mana = CoreStats:WaitForChild("Mana")
+local Shield = CoreStats:WaitForChild("Shield")
 
 UserInputService.InputBegan:Connect(function(input, _gameProcessed)
 	if input.KeyCode == Enum.KeyCode.E then
-		--fireball:FireServer(player);
+		print("Fla")
 	elseif input.KeyCode == Enum.KeyCode.Q then
-		player:SetAttribute("Mana",player:GetAttribute("Mana") - 20)
-		player:SetAttribute("Shield",player:GetAttribute("Shield") - 10)
+		test:FireServer()
 	end
 end)
 
