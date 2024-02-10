@@ -81,4 +81,3 @@ humanoid.Died:Connect(function()
 	cameraFunctions.UpdateFOV(camera,baseFOV,0)
 end)
 
-print("glorf")

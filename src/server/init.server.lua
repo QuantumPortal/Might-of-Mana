@@ -17,13 +17,13 @@ test.OnServerEvent:Connect(function(player)
     
     if player.CoreStats.Mana.Value >= 30 then
         player.CoreStats.Mana.Value -= 30
-        local smelvin = Instance.new("ParticleEmitter")
+        --local smelvin = Instance.new("ParticleEmitter")
 
-        smelvin.Texture = "rbxassetid://14864667431"
-        smelvin.Parent = player.Character.HumanoidRootPart
+        --smelvin.Texture = "rbxassetid://14864667431"
+        --smelvin.Parent = player.Character.HumanoidRootPart
 
-        tick.wait(3)
-        smelvin:Destroy()
+        --tick.wait(3)
+        --smelvin:Destroy()
     end
 end)
 
@@ -42,30 +42,33 @@ players.PlayerAdded:Connect(function(player)
         numValueGeneric(folder,"MaxMana")
         numValueGeneric(folder,"BaseManaRegen")
         numValueGeneric(folder,"BonusManaRegen")
+        numValueGeneric(folder,"MaxBonusManaRegen")
+        numValueGeneric(folder,"LastManaFraction")
         numValueGeneric(folder,"Shield")
         numValueGeneric(folder,"MaxShield")
 
+        
+
         folder.Mana.Value = 100
         folder.MaxMana.Value = 100
-        folder.BaseManaRegen.Value = 5
+        folder.BaseManaRegen.Value = 2.5
+        folder.MaxBonusManaRegen.Value = 20
         folder.Shield.Value = 100
         folder.MaxShield.Value = 100
 
         --character.Animate.walk.WalkAnim.AnimationId = "rbxassetid://15872307313"
 		--character.Animate.run.RunAnim.AnimationId = "rbxassetid://15872263018"
+
+        folder.Mana.Changed:Connect(function()
+            local ManaFraction = folder.Mana.Value / folder.MaxMana.Value
+            if ManaFraction < folder.LastManaFraction.Value then
+                folder.BonusManaRegen.Value = 0
+            end
+            folder.LastManaFraction.Value = ManaFraction
+        end)
     end)
 
-    --player:GetAttributeChangedSignal("Mana"):Connect(function()
-        --[[
-        local value = player:GetAttribute("Mana") / player:GetAttribute("MaxMana")
-
-        print(value,player:GetAttribute("LastMana"))
-        if value < player:GetAttribute("LastMana") then
-            player:SetAttribute("BonusRegen",0)
-        end
-        player:SetAttribute("LastMana",value)
-        ]]--
-    --end)
+    
     
 end)
 
@@ -87,14 +90,22 @@ RunService.Stepped:Connect(function(_currentTime, deltaTime)
             local MaxMana = CoreStats:WaitForChild("MaxMana")
             local BaseManaRegen = CoreStats:WaitForChild("BaseManaRegen")
             local BonusManaRegen = CoreStats:WaitForChild("BonusManaRegen")
+            local MaxBonusManaRegen = CoreStats:WaitForChild("MaxBonusManaRegen")
             local Shield = CoreStats:WaitForChild("Shield")
             local MaxShield = CoreStats:WaitForChild("MaxShield")
+
+
+            BonusManaRegen.Value += MaxBonusManaRegen.Value * deltaTime * math.clamp(math.pow(BonusManaRegen.Value,3),1,(MaxBonusManaRegen.Value * 5)) * (1/(MaxBonusManaRegen.Value * 5))
+
             
+            if MaxBonusManaRegen.Value < BonusManaRegen.Value then
+                BonusManaRegen.Value =  MaxBonusManaRegen.Value    
+            end
+            print(BonusManaRegen.Value)
+            Mana.Value += (BaseManaRegen.Value + BonusManaRegen.Value ) * deltaTime
 
-            print(Mana.Value)
-            Mana.Value += (BaseManaRegen.Value + BonusManaRegen.Value ) * deltaTime 
-
-
+            
+            
 
             if Shield.Value > MaxShield.Value then
                 Shield.Value = MaxShield.Value
