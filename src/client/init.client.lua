@@ -12,16 +12,24 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:FindFirstChild("Humanoid") or character:WaitForChild("Humanoid")
 local camera = workspace.Camera
 local cameraTilt = 0
-local baseWalkSpeed = 9
 
 local baseFOV = 70
 
 --local fireball = game.ReplicatedStorage.Shared:FindFirstChild("Fireball") or game.ReplicatedStorage.Shared:WaitForChild("Fireball")
 local test = game.ReplicatedStorage.Remotes:WaitForChild("Test")
+local SprintBonus = 0
 
 local CoreStats = player:WaitForChild("CoreStats")
 local Mana = CoreStats:WaitForChild("Mana")
 local Shield = CoreStats:WaitForChild("Shield")
+local BaseWalkSpeed = CoreStats:WaitForChild("BaseWalkSpeed")
+local SprintSpeed = CoreStats:WaitForChild("SprintSpeed")
+
+local StatusAbnormalities = player:WaitForChild("StatusAbnormalities")
+local Slow = StatusAbnormalities:WaitForChild("Slow")
+
+local Buffs = player:WaitForChild("Buffs")
+local Speed = Buffs:WaitForChild("Speed")
 
 UserInputService.InputBegan:Connect(function(input, _gameProcessed)
 	if input.KeyCode == Enum.KeyCode.E then
@@ -31,14 +39,25 @@ UserInputService.InputBegan:Connect(function(input, _gameProcessed)
 	end
 end)
 
-humanoid.WalkSpeed = baseWalkSpeed
+humanoid.WalkSpeed = BaseWalkSpeed.Value
 humanoid.AutoRotate = false
 
 player.CharacterAdded:Connect(function(character)
 	humanoid = character:WaitForChild("Humanoid")
-	humanoid.WalkSpeed = baseWalkSpeed
+	humanoid.WalkSpeed = BaseWalkSpeed.Value
 	humanoid.AutoRotate = false
 end)
+
+
+BaseWalkSpeed.Changed:Connect(function()
+	if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+		humanoid.WalkSpeed = BaseWalkSpeed.Value * SprintSpeed.Value
+	else
+		humanoid.WalkSpeed = BaseWalkSpeed.Value
+	end
+	
+end)
+
 
 RunService.RenderStepped:Connect(function(delay)
 
@@ -57,22 +76,23 @@ RunService.RenderStepped:Connect(function(delay)
 	cameraTilt = math.sign(cameraTilt) * math.floor(math.abs(cameraTilt)*100)/100
 
 	--Sprint speedup/slowdown
+
 	if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-		if humanoid.WalkSpeed < baseWalkSpeed + 10 then
-			humanoid.WalkSpeed += (baseWalkSpeed + 10 - humanoid.WalkSpeed)/6
-		end
+		SprintBonus += (SprintSpeed.Value-SprintBonus)/6
 	else
-		if humanoid.WalkSpeed > baseWalkSpeed then
-			humanoid.WalkSpeed -= (humanoid.WalkSpeed - baseWalkSpeed)/6
+		SprintBonus -= (SprintBonus-1)/6
+		if SprintBonus < 1 then
+			SprintBonus = 1
 		end
 	end
 
+	humanoid.WalkSpeed = (1+Speed.Value) * (1-Slow.Value) * ( BaseWalkSpeed.Value * SprintBonus )
 
 	if humanoid and humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
 		characterFunctions.DirectionalTilt(player)
 		characterFunctions.LookToMouse(player)
 		cameraFunctions.CameraTilt(camera, cameraTilt)
-		cameraFunctions.UpdateFOV(camera,baseFOV,humanoid.WalkSpeed - baseWalkSpeed)
+		cameraFunctions.UpdateFOV(camera,baseFOV,humanoid.WalkSpeed - BaseWalkSpeed.Value)
 	end
 end)
 

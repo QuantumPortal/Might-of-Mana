@@ -14,16 +14,16 @@ end
 
 
 test.OnServerEvent:Connect(function(player)
-    
     if player.CoreStats.Mana.Value >= 30 then
         player.CoreStats.Mana.Value -= 30
-        --local smelvin = Instance.new("ParticleEmitter")
+        local fireball = Instance.new("Part")
+        fireball.Shape = Enum.PartType.Ball
+        fireball.Color = Color3.new(255,51,0)
+        fireball.Size = Vector3.new(0.5,0.5,0.5)
 
-        --smelvin.Texture = "rbxassetid://14864667431"
-        --smelvin.Parent = player.Character.HumanoidRootPart
-
-        --tick.wait(3)
-        --smelvin:Destroy()
+        fireball.Parent = workspace.Spells
+        fireball.CFrame = player.Character.HumanoidRootPart.CFrame
+        fireball.CFrame += Vector3.new(3,3,3) * player.Character.HumanoidRootPart.CFrame.LookVector
     end
 end)
 
@@ -38,6 +38,7 @@ players.PlayerAdded:Connect(function(player)
         folder.Name = "CoreStats"
         folder.Parent = player
 
+        
         numValueGeneric(folder,"Mana")
         numValueGeneric(folder,"MaxMana")
         numValueGeneric(folder,"BaseManaRegen")
@@ -46,9 +47,11 @@ players.PlayerAdded:Connect(function(player)
         numValueGeneric(folder,"LastManaFraction")
         numValueGeneric(folder,"Shield")
         numValueGeneric(folder,"MaxShield")
-
+        numValueGeneric(folder,"BaseWalkSpeed")
+        numValueGeneric(folder,"SprintSpeed")
         
-
+        folder.BaseWalkSpeed.Value = 9
+        folder.SprintSpeed.Value = 2.0
         folder.Mana.Value = 100
         folder.MaxMana.Value = 100
         folder.BaseManaRegen.Value = 2.5
@@ -56,6 +59,21 @@ players.PlayerAdded:Connect(function(player)
         folder.Shield.Value = 100
         folder.MaxShield.Value = 100
 
+        local badFolder = Instance.new("Folder")
+        badFolder.Name = "StatusAbnormalities"
+        badFolder.Parent = player
+
+        numValueGeneric(badFolder,"Slow")
+
+        badFolder.Slow.Value = 0
+
+        local goodFolder = Instance.new("Folder")
+        goodFolder.Name = "Buffs"
+        goodFolder.Parent = player
+
+        numValueGeneric(goodFolder,"Speed")
+
+        goodFolder.Speed.Value = 0
         --character.Animate.walk.WalkAnim.AnimationId = "rbxassetid://15872307313"
 		--character.Animate.run.RunAnim.AnimationId = "rbxassetid://15872263018"
 
@@ -94,17 +112,12 @@ RunService.Stepped:Connect(function(_currentTime, deltaTime)
             local Shield = CoreStats:WaitForChild("Shield")
             local MaxShield = CoreStats:WaitForChild("MaxShield")
 
-
             BonusManaRegen.Value += MaxBonusManaRegen.Value * deltaTime * math.clamp(math.pow(BonusManaRegen.Value,3),1,(MaxBonusManaRegen.Value * 5)) * (1/(MaxBonusManaRegen.Value * 5))
-
             
             if MaxBonusManaRegen.Value < BonusManaRegen.Value then
                 BonusManaRegen.Value =  MaxBonusManaRegen.Value    
             end
-            print(BonusManaRegen.Value)
-            Mana.Value += (BaseManaRegen.Value + BonusManaRegen.Value ) * deltaTime
-
-            
+            Mana.Value += (BaseManaRegen.Value + BonusManaRegen.Value ) * deltaTime  
             
 
             if Shield.Value > MaxShield.Value then
