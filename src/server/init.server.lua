@@ -4,6 +4,8 @@ local RunService = game:GetService("RunService")
 --local fireball = game.ReplicatedStorage.Shared:FindFirstChild("Fireball") or game.ReplicatedStorage.Shared:WaitForChild("Fireball")
 
 local test = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Test")
+local NoMana = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("NoMana")
+
 
 local function numValueGeneric(parent,name)
     local thing = Instance.new("NumberValue")
@@ -24,6 +26,8 @@ test.OnServerEvent:Connect(function(player)
         fireball.Parent = workspace.Spells
         fireball.CFrame = player.Character.HumanoidRootPart.CFrame
         fireball.CFrame += Vector3.new(3,3,3) * player.Character.HumanoidRootPart.CFrame.LookVector
+    else
+        NoMana:FireClient(player, -30 / player.CoreStats.MaxMana.Value)
     end
 end)
 
@@ -51,7 +55,7 @@ players.PlayerAdded:Connect(function(player)
         numValueGeneric(folder,"SprintSpeed")
         
         folder.BaseWalkSpeed.Value = 9
-        folder.SprintSpeed.Value = 2.0
+        folder.SprintSpeed.Value = 1.65
         folder.Mana.Value = 100
         folder.MaxMana.Value = 100
         folder.BaseManaRegen.Value = 2.5
