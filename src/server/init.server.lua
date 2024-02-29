@@ -20,14 +20,14 @@ test.OnServerEvent:Connect(function(player)
         player.CoreStats.Mana.Value -= 30
         local fireball = Instance.new("Part")
         fireball.Shape = Enum.PartType.Ball
-        fireball.Color = Color3.new(255,51,0)
+        fireball.Color = Color3.new(0.976470, 0.462745, 0.333333)
         fireball.Size = Vector3.new(0.5,0.5,0.5)
 
         fireball.Parent = workspace.Spells
         fireball.CFrame = player.Character.HumanoidRootPart.CFrame
         fireball.CFrame += Vector3.new(3,3,3) * player.Character.HumanoidRootPart.CFrame.LookVector
     else
-        NoMana:FireClient(player, -30 / player.CoreStats.MaxMana.Value)
+        NoMana:FireClient(player,30/player.CoreStats.MaxMana.Value)
     end
 end)
 
@@ -104,6 +104,8 @@ while true do
     end
 end
 ]]--
+
+
 RunService.Stepped:Connect(function(_currentTime, deltaTime)
     for _, player in players:GetPlayers() do
         if player.HasAppearanceLoaded then
@@ -137,7 +139,7 @@ RunService.Stepped:Connect(function(_currentTime, deltaTime)
         end
     end
 end)
-    
+
         --[[
         task.wait(1)
         local agra = player:GetAttribute("Mana") + 5
