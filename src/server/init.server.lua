@@ -6,26 +6,52 @@ local RunService = game:GetService("RunService")
 local test = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Test")
 local NoMana = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("NoMana")
 
-
-local function numValueGeneric(parent,name)
+local function numValueGeneric(parent,name,value)
     local thing = Instance.new("NumberValue")
     thing.Parent = parent
     thing.Name = name
+    if value then
+        thing.Value = value
+    else
+        thing.Value = 0
+    end
+    
 end
 
 
-
-test.OnServerEvent:Connect(function(player)
+test.OnServerEvent:Connect(function(player,mouseHit)
     if player.CoreStats.Mana.Value >= 30 then
+        
+
         player.CoreStats.Mana.Value -= 30
         local fireball = Instance.new("Part")
         fireball.Shape = Enum.PartType.Ball
         fireball.Color = Color3.new(0.976470, 0.462745, 0.333333)
         fireball.Size = Vector3.new(0.5,0.5,0.5)
+        fireball.CanCollide = false
 
+        local fire = Instance.new("Fire")
+        fire.Parent = fireball
+        fire.Heat = 0
+        fire.TimeScale = 0.83
+        fire.Size = 6
+        
         fireball.Parent = workspace.Spells
-        fireball.CFrame = player.Character.HumanoidRootPart.CFrame
-        fireball.CFrame += Vector3.new(3,3,3) * player.Character.HumanoidRootPart.CFrame.LookVector
+        --fireball.CFrame = CFrame.new(player.Character.HumanoidRootPart.CFrame.Position) * player.Character.Head.Neck.C0.Rotation
+        --fireball.CFrame += Vector3.new(3,3,3) * player.Character.Head.Neck.C0.LookVector
+
+        
+        fireball.CFrame = CFrame.lookAt(player.Character.HumanoidRootPart.CFrame.Position,mouseHit)
+        fireball.CFrame += Vector3.new(2,2,2) * fireball.CFrame.LookVector
+
+        local attachment = Instance.new("Attachment", fireball)
+
+        local force = Instance.new("LinearVelocity",attachment)
+        force.VectorVelocity = fireball.CFrame.LookVector * 17
+        force.Parent = fireball
+        force.Attachment0 = attachment
+        
+        
     else
         NoMana:FireClient(player,30/player.CoreStats.MaxMana.Value)
     end
@@ -38,55 +64,70 @@ players.PlayerAdded:Connect(function(player)
 	
 
     player.CharacterAppearanceLoaded:Connect(function(character)
-        local folder = Instance.new("Folder")
-        folder.Name = "CoreStats"
-        folder.Parent = player
+
+        --           -==(CORE STATS)==-
+        local statFolder = Instance.new("Folder")
+        statFolder.Name = "CoreStats"
+        statFolder.Parent = player
+        
+        numValueGeneric(statFolder,"Mana",100)
+        numValueGeneric(statFolder,"MaxMana",100)
+        numValueGeneric(statFolder,"BaseManaRegen",2.5)
+        numValueGeneric(statFolder,"BonusManaRegen",0)
+        numValueGeneric(statFolder,"MaxBonusManaRegen",20)
+        numValueGeneric(statFolder,"LastManaFraction")
+        numValueGeneric(statFolder,"Shield",100)
+        numValueGeneric(statFolder,"MaxShield",100)
+        numValueGeneric(statFolder,"BaseWalkSpeed",7)
+        numValueGeneric(statFolder,"SprintSpeed",1.7)
+
+
+
+        --      -==(Status Abnormalities)==-
+        local debuffFolder = Instance.new("Folder")
+        debuffFolder.Name = "StatusAbnormalities"
+        debuffFolder.Parent = player
+
+        numValueGeneric(debuffFolder,"Slow")
+
+
+
+        --            -==(Buffs)==-
+        local buffFolder = Instance.new("Folder")
+        buffFolder.Name = "Buffs"
+        buffFolder.Parent = player
+
+        numValueGeneric(buffFolder,"Speed")
+
+
+
+        --          -==(Resistances)==-
+        local resistanceFolder = Instance.new("Folder")
+        resistanceFolder.Name = "Resistances"
+        resistanceFolder.Parent = player
+        numValueGeneric(resistanceFolder,"Physical")
+        numValueGeneric(resistanceFolder,"Pierce")
+        numValueGeneric(resistanceFolder,"Blunt")
+        numValueGeneric(resistanceFolder,"Slash")        
+        numValueGeneric(resistanceFolder,"Elemental")
+        numValueGeneric(resistanceFolder,"Fire")
+        numValueGeneric(resistanceFolder,"Ice")
+        numValueGeneric(resistanceFolder,"Water")
+        numValueGeneric(resistanceFolder,"Electric")
+        numValueGeneric(resistanceFolder,"Earth")
+
 
         
-        numValueGeneric(folder,"Mana")
-        numValueGeneric(folder,"MaxMana")
-        numValueGeneric(folder,"BaseManaRegen")
-        numValueGeneric(folder,"BonusManaRegen")
-        numValueGeneric(folder,"MaxBonusManaRegen")
-        numValueGeneric(folder,"LastManaFraction")
-        numValueGeneric(folder,"Shield")
-        numValueGeneric(folder,"MaxShield")
-        numValueGeneric(folder,"BaseWalkSpeed")
-        numValueGeneric(folder,"SprintSpeed")
-        
-        folder.BaseWalkSpeed.Value = 9
-        folder.SprintSpeed.Value = 1.65
-        folder.Mana.Value = 100
-        folder.MaxMana.Value = 100
-        folder.BaseManaRegen.Value = 2.5
-        folder.MaxBonusManaRegen.Value = 20
-        folder.Shield.Value = 100
-        folder.MaxShield.Value = 100
 
-        local badFolder = Instance.new("Folder")
-        badFolder.Name = "StatusAbnormalities"
-        badFolder.Parent = player
-
-        numValueGeneric(badFolder,"Slow")
-
-        badFolder.Slow.Value = 0
-
-        local goodFolder = Instance.new("Folder")
-        goodFolder.Name = "Buffs"
-        goodFolder.Parent = player
-
-        numValueGeneric(goodFolder,"Speed")
-
-        goodFolder.Speed.Value = 0
         --character.Animate.walk.WalkAnim.AnimationId = "rbxassetid://15872307313"
 		--character.Animate.run.RunAnim.AnimationId = "rbxassetid://15872263018"
 
-        folder.Mana.Changed:Connect(function()
-            local ManaFraction = folder.Mana.Value / folder.MaxMana.Value
-            if ManaFraction < folder.LastManaFraction.Value then
-                folder.BonusManaRegen.Value = 0
+        statFolder.Mana.Changed:Connect(function()
+            local ManaFraction = statFolder.Mana.Value / statFolder.MaxMana.Value
+            if ManaFraction < statFolder.LastManaFraction.Value then
+                statFolder.BonusManaRegen.Value = 0
             end
-            folder.LastManaFraction.Value = ManaFraction
+            statFolder.LastManaFraction.Value = ManaFraction
         end)
     end)
 

@@ -6,7 +6,7 @@ local characterFunctions = require(script.character)
 local cameraFunctions = require(script.camera)
 
 local player = Players.LocalPlayer
-
+local mouse = player:GetMouse()
 
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:FindFirstChild("Humanoid") or character:WaitForChild("Humanoid")
@@ -35,7 +35,7 @@ UserInputService.InputBegan:Connect(function(input, _gameProcessed)
 	if input.KeyCode == Enum.KeyCode.E then
 		print("Fla")
 	elseif input.KeyCode == Enum.KeyCode.Q then
-		test:FireServer()
+		test:FireServer(mouse)
 	end
 end)
 
