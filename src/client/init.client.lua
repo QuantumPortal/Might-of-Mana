@@ -35,7 +35,7 @@ UserInputService.InputBegan:Connect(function(input, _gameProcessed)
 	if input.KeyCode == Enum.KeyCode.E then
 		print("Fla")
 	elseif input.KeyCode == Enum.KeyCode.Q then
-		test:FireServer(mouse)
+		test:FireServer(mouse.Hit.Position)
 	end
 end)
 

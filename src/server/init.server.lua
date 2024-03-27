@@ -26,15 +26,17 @@ test.OnServerEvent:Connect(function(player,mouseHit)
         player.CoreStats.Mana.Value -= 30
         local fireball = Instance.new("Part")
         fireball.Shape = Enum.PartType.Ball
-        fireball.Color = Color3.new(0.976470, 0.462745, 0.333333)
-        fireball.Size = Vector3.new(0.5,0.5,0.5)
+        fireball.Color = Color3.fromHex("#aa5500")
+        fireball.Material = Enum.Material.Neon
+        fireball.Transparency = 0.6
+        fireball.Size = Vector3.new(0.8,0.8,0.8)
         fireball.CanCollide = false
 
         local fire = Instance.new("Fire")
         fire.Parent = fireball
         fire.Heat = 0
-        fire.TimeScale = 0.83
-        fire.Size = 6
+        fire.TimeScale = 1
+        fire.Size = 3.2
         
         fireball.Parent = workspace.Spells
         --fireball.CFrame = CFrame.new(player.Character.HumanoidRootPart.CFrame.Position) * player.Character.Head.Neck.C0.Rotation
