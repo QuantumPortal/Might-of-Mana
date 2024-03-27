@@ -7,7 +7,7 @@ local RunService = game:GetService("RunService")
 local test = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Test")
 local SlowTest = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("SlowTest")
 local NoMana = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("NoMana")
-StatusEffects = require(script.statusEffects)
+StatusEffects = require(script.StatusEffects)
 
 
 local function numValueGeneric(parent,name,value)
@@ -24,13 +24,27 @@ end
 
 
 
-
+local canCastSpell = true
 
 test.OnServerEvent:Connect(function(player,mouseHit)
-    if player.CoreStats.Mana.Value >= 30 then
-        
-
+    if player.CoreStats.Mana.Value >= 30 and canCastSpell then
+        canCastSpell = false
         player.CoreStats.Mana.Value -= 30
+        local EffectRun
+        local castSlow = StatusEffects.New(1,65,"StatusAbnormalities","Slow",function(time)
+            return 1- 16 * (time - 0.5)^4
+        end)
+        
+        EffectRun = RunService.Stepped:Connect(function(_currentTime, deltaTime)
+            print(player.StatusAbnormalities.Slow.Value)
+            castSlow:Apply(player,deltaTime)
+            if castSlow.Duration < castSlow.Time then
+                EffectRun:Disconnect()
+            end
+        end)
+
+
+        task.wait(0.65)
         local fireball = Instance.new("Part")
         fireball.Shape = Enum.PartType.Ball
         fireball.Color = Color3.fromHex("#aa5500")
@@ -60,36 +74,26 @@ test.OnServerEvent:Connect(function(player,mouseHit)
         force.Parent = fireball
         force.Attachment0 = attachment
         
+        task.wait(0.35)
+
+        canCastSpell = true
         
     else
         NoMana:FireClient(player,30/player.CoreStats.MaxMana.Value)
     end
 end)
 
-SlowTest.OnServerEvent:Connect(function(player)
+--[[SlowTest.OnServerEvent:Connect(function(player)
     if player.CoreStats.Mana.Value >= 13 then
         
-        local slow = StatusEffects.New(1.2,70,"StatusAbnormalities","Slow",function(time)
-            return math.abs(math.cos((time+0.6) * math.pi / 1.2))
-        end)
-        print("Slow generated!")
-
-        local EffectRun
-        EffectRun = RunService.Stepped:Connect(function(_currentTime, deltaTime)
-            print(player.StatusAbnormalities.Slow.Value)
-            slow:Apply(player,deltaTime)
-            if slow.Duration < slow.Time then
-                print("Slow finished!")
-                
-                EffectRun:Disconnect()
-            end
-        end)
+        
 
 
     else
         NoMana:FireClient(player,13/player.CoreStats.MaxMana.Value)
     end
 end)
+]]--
 
 players.PlayerAdded:Connect(function(player)
 
