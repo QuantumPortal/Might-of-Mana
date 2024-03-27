@@ -17,6 +17,7 @@ local baseFOV = 70
 
 --local fireball = game.ReplicatedStorage.Shared:FindFirstChild("Fireball") or game.ReplicatedStorage.Shared:WaitForChild("Fireball")
 local test = game.ReplicatedStorage.Remotes:WaitForChild("Test")
+local SlowTest = game.ReplicatedStorage.Remotes:WaitForChild("SlowTest")
 local SprintBonus = 0
 
 local CoreStats = player:WaitForChild("CoreStats")
@@ -33,7 +34,7 @@ local Speed = Buffs:WaitForChild("Speed")
 
 UserInputService.InputBegan:Connect(function(input, _gameProcessed)
 	if input.KeyCode == Enum.KeyCode.E then
-		print("Fla")
+		SlowTest:FireServer()
 	elseif input.KeyCode == Enum.KeyCode.Q then
 		test:FireServer(mouse.Hit.Position)
 	end
@@ -86,7 +87,7 @@ RunService.RenderStepped:Connect(function(delay)
 		end
 	end
 
-	humanoid.WalkSpeed = (1+Speed.Value) * (1-Slow.Value) * ( BaseWalkSpeed.Value * SprintBonus )
+	humanoid.WalkSpeed = (1+Speed.Value) * (1-Slow.Value/100) * ( BaseWalkSpeed.Value * SprintBonus )
 
 	if humanoid and humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
 		characterFunctions.DirectionalTilt(player)

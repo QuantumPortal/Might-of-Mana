@@ -1,10 +1,14 @@
+local Debris = game:GetService("Debris")
 local players = game:GetService("Players")
 local PolicyService = game:GetService("PolicyService")
 local RunService = game:GetService("RunService")
 --local fireball = game.ReplicatedStorage.Shared:FindFirstChild("Fireball") or game.ReplicatedStorage.Shared:WaitForChild("Fireball")
 
 local test = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Test")
+local SlowTest = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("SlowTest")
 local NoMana = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("NoMana")
+StatusEffects = require(script.statusEffects)
+
 
 local function numValueGeneric(parent,name,value)
     local thing = Instance.new("NumberValue")
@@ -19,6 +23,9 @@ local function numValueGeneric(parent,name,value)
 end
 
 
+
+
+
 test.OnServerEvent:Connect(function(player,mouseHit)
     if player.CoreStats.Mana.Value >= 30 then
         
@@ -28,7 +35,7 @@ test.OnServerEvent:Connect(function(player,mouseHit)
         fireball.Shape = Enum.PartType.Ball
         fireball.Color = Color3.fromHex("#aa5500")
         fireball.Material = Enum.Material.Neon
-        fireball.Transparency = 0.6
+        fireball.Transparency = 1
         fireball.Size = Vector3.new(0.8,0.8,0.8)
         fireball.CanCollide = false
 
@@ -36,7 +43,7 @@ test.OnServerEvent:Connect(function(player,mouseHit)
         fire.Parent = fireball
         fire.Heat = 0
         fire.TimeScale = 1
-        fire.Size = 3.2
+        fire.Size = 5.2
         
         fireball.Parent = workspace.Spells
         --fireball.CFrame = CFrame.new(player.Character.HumanoidRootPart.CFrame.Position) * player.Character.Head.Neck.C0.Rotation
@@ -49,13 +56,38 @@ test.OnServerEvent:Connect(function(player,mouseHit)
         local attachment = Instance.new("Attachment", fireball)
 
         local force = Instance.new("LinearVelocity",attachment)
-        force.VectorVelocity = fireball.CFrame.LookVector * 17
+        force.VectorVelocity = fireball.CFrame.LookVector * 19
         force.Parent = fireball
         force.Attachment0 = attachment
         
         
     else
         NoMana:FireClient(player,30/player.CoreStats.MaxMana.Value)
+    end
+end)
+
+SlowTest.OnServerEvent:Connect(function(player)
+    if player.CoreStats.Mana.Value >= 13 then
+        
+        local slow = StatusEffects.New(1.2,70,"StatusAbnormalities","Slow",function(time)
+            return math.abs(math.cos((time+0.6) * math.pi / 1.2))
+        end)
+        print("Slow generated!")
+
+        local EffectRun
+        EffectRun = RunService.Stepped:Connect(function(_currentTime, deltaTime)
+            print(player.StatusAbnormalities.Slow.Value)
+            slow:Apply(player,deltaTime)
+            if slow.Duration < slow.Time then
+                print("Slow finished!")
+                
+                EffectRun:Disconnect()
+            end
+        end)
+
+
+    else
+        NoMana:FireClient(player,13/player.CoreStats.MaxMana.Value)
     end
 end)
 
@@ -81,7 +113,7 @@ players.PlayerAdded:Connect(function(player)
         numValueGeneric(statFolder,"Shield",100)
         numValueGeneric(statFolder,"MaxShield",100)
         numValueGeneric(statFolder,"BaseWalkSpeed",7)
-        numValueGeneric(statFolder,"SprintSpeed",1.7)
+        numValueGeneric(statFolder,"SprintSpeed",1.9)
 
 
 
