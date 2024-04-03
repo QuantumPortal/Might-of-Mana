@@ -23,24 +23,21 @@ end
 
 
 
-local canCastSpell = true
+local debounce = true
 
 test.OnServerEvent:Connect(function(player,mouseHit)
-    for v in pairs(player.Effects:GetChildren()) do
-        print(v)
-    end
-
-
-    if player.CoreStats.Mana.Value >= 30 and canCastSpell then
-        canCastSpell = false
+    if player.CoreStats.Mana.Value >= 30 and debounce then
+        debounce = false
         player.CoreStats.Mana.Value -= 30
         
         local castSlow = StatusEffects.New(
+            "system/spell_cast_slow",
+            "Casting Concentration",
             1,
             65,
             {["TYPE"] = "StatusAbnormalities",["NAME"] = "Slow"},
             function(time) return 1- 16 * (time - 0.5)^4 end,
-            "StrongestRefresh"
+            "StrongestReplace"
         )
         
         castSlow:Apply(player)
@@ -78,8 +75,7 @@ test.OnServerEvent:Connect(function(player,mouseHit)
         
         task.wait(0.35)
 
-        canCastSpell = true
-        
+        debounce = true
     else
         NoMana:FireClient(player,30/player.CoreStats.MaxMana.Value)
     end
@@ -145,9 +141,7 @@ players.PlayerAdded:Connect(function(player)
         numValueGeneric(resistanceFolder,"Earth")
 
         --              -==(MISC)==-
-        local effectsFolder = Instance.new("Folder")
-        effectsFolder.Name = "Effects"
-        effectsFolder.Parent = player
+        
         
 
         --character.Animate.walk.WalkAnim.AnimationId = "rbxassetid://15872307313"
