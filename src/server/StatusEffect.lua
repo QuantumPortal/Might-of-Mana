@@ -4,12 +4,11 @@ StatusEffect.__index = StatusEffect
 local StatusEffectStorage = {}
 local CombineTypes = {
     ["StrongestReplace"] = function(initialEffect,addedEffect)
-        if initialEffect["STATUSEFFECT"].Potency > addedEffect.Potency then
-            initialEffect["STATUSEFFECT"].Time = 0
+        if initialEffect.Potency >= addedEffect.Potency then
+            initialEffect.ElapsedTime = 0
         else 
-            initialEffect["STATUSEFFECT"]:Stop(addedEffect.Player,initialEffect["CONNECTION"])
-            
-            addedEffect:BeginRun(addedEffect.Player)
+            initialEffect:Kill()
+            addedEffect:Apply()
         end
     end,
     ["MeanRefresh"] = function(initialEffect,addedEffect)
@@ -44,15 +43,16 @@ function StatusEffect:Apply()
         StatusEffectStorage[self.Player.UserId] = {}
     end
 
-    if StatusEffectStorage[self.Player.UserId][self.EffectID] then
-        local ExistingStatusEffect = StatusEffectStorage[self.Player.UserId][self.EffectID]
-        print("Effect exists! Combining through",ExistingStatusEffect.CombineType)
-        CombineTypes[ExistingStatusEffect.CombineType](ExistingStatusEffect,self)
+    if StatusEffectStorage[self.Player.UserId][self.Effect.EffectID] then
+        local ExistingStatusEffect = StatusEffectStorage[self.Player.UserId][self.Effect.EffectID]
+        print("Effect exists! Combining through",ExistingStatusEffect.Effect.CombineType)
+        CombineTypes[ExistingStatusEffect.Effect.CombineType](ExistingStatusEffect,self)
         return
     end
 
     
-    print("Creating effect: >",self.EffectID,"< on player", self.Player.DisplayName)
+    print("Creating effect: >",self.Effect.EffectID,"< on player", self.Player.DisplayName)
+    StatusEffectStorage[self.Player.UserId][self.Effect.EffectID] = self
     self.Connection = game:GetService("RunService").Stepped:Connect(function(_currentTime, deltaTime)
         
         
@@ -72,62 +72,44 @@ function StatusEffect:Apply()
             self.PerSingleEffectArray[i]["TimeSinceLastTick"] += deltaTime
 
             if self.PerSingleEffectArray[i]["TimeSinceLastTick"]  > singleEffect["TickInterval"] and self.PerSingleEffectArray[i]["CurrentlyRunning"] then
-                self.PerSingleEffectArray[i]["TimeSinceLastTick"]  = 0
-                local rawChangeValue, deltaChangeValue = singleEffect["Effect"](self.Player,self.ElapsedTime, self.Potency, self.PerSingleEffectArray[i]["PreviousChange"])
-                self.PerSingleEffectArray[i]["PreviousChange"] = deltaChangeValue
-                print(self.Player.StatusAbnormalities.Slow.Value, deltaChangeValue)
-
-                if self.ElapsedTime > singleEffect["Duration"] then
-                    self.PerSingleEffectArray[i]["CurrentlyRunning"] = false
-                    if singleEffect["RequiresReversal"] then
-                        singleEffect["Reversal"](self.Player, rawChangeValue)
-                        print("fwaa")
-                    end
+                local duration = singleEffect["Duration"]
+                if singleEffect["VariableDuration"] then
+                    duration = singleEffect["Duration"](self.Potency)
                 end
+
+                if self.ElapsedTime > duration then
+                    self.PerSingleEffectArray[i]["CurrentlyRunning"] = false
+                    singleEffect["LastTickFunction"](self.Player, self.PerSingleEffectArray[i]["PreviousChange"])
+                    
+                else 
+                local changeValue = singleEffect["Effect"](
+                    self.Player,
+                    self.ElapsedTime, 
+                    self.Potency, 
+                    self.PerSingleEffectArray[i]["PreviousChange"],
+                    self.PerSingleEffectArray[i]["TimeSinceLastTick"]
+                )
+
+                self.PerSingleEffectArray[i]["TimeSinceLastTick"]  = 0
+                self.PerSingleEffectArray[i]["PreviousChange"] = changeValue
+                end  
             end
-
-            continueRunning = continueRunning and self.PerSingleEffectArray["CurrentlyRunning"]
+            
+            continueRunning = continueRunning or self.PerSingleEffectArray[i]["CurrentlyRunning"]
         end
 
-        if continueRunning then
-            self.Connection:Disconnect()
-            self.Connection = nil
-        end
-
-    end)
-    
-    
-end
---[[
-function StatusEffect:BeginRun(targetPlayer)
-    local EffectRun
-    StatusEffectStorage[targetPlayer][self.EffectID] = {
-        ["STATUSEFFECT"] = self,
-        ["CONNECTION"] = EffectRun
-    }
-
-    EffectRun = game:GetService("RunService").Stepped:Connect(function(_currentTime, deltaTime)
-        self:Step(targetPlayer,deltaTime)
-        if self.Duration < self.Time then
-            self:Stop(targetPlayer,EffectRun)
+        
+        if not continueRunning then
+            self:Kill()
         end
     end)
 end
 
-
-function StatusEffect:Step(player, deltaTime)
-    self.Time += deltaTime
-    local modifier = self.Transformation(self.Time)
-
-    for Effect in self.Effects do
-        Effect(player,deltaTime)
-    end
-
-    player:FindFirstChild(self.Effect.TYPE):FindFirstChild(self.Effect.NAME).Value += modifier * self.Potency - self.LastEffectApply
-    self.EffectAggregate += modifier * self.Potency - self.LastEffectApply
-    self.LastEffectApply = modifier * self.Potency
+function StatusEffect:Kill()
+    self.Connection:Disconnect()
+    self.Connection = nil
+    StatusEffectStorage[self.Player.UserId][self.Effect.EffectID] = nil
 end
-]]--
 
 
 

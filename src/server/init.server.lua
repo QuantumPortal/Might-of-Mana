@@ -12,6 +12,7 @@ local SlowTest = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Sl
 local NoMana = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("NoMana")
 
 
+
 local function numValueGeneric(parent,name,value)
     local thing = Instance.new("NumberValue")
     thing.Parent = parent
@@ -23,7 +24,6 @@ local function numValueGeneric(parent,name,value)
     end
     
 end
-
 
 local CommonEffects = {
     ["status_abnormalities/cast_slow"] = Effect.new(
@@ -38,15 +38,16 @@ local CommonEffects = {
             {
                 ["TickInterval"] = 0,
                 ["VariableDuration"] = false,
-                ["Duration"] = 1.4,
-                ["RequiresReversal"] = true,
-                ["Reversal"] = function(player, value)
+                ["Duration"] = 1.13,
+                ["LastTickFunction"] = function(player,value)
                     player.StatusAbnormalities.Slow.Value -= value
+                    --print(player.StatusAbnormalities.Slow.Value)
                 end,
-                ["Effect"] = function(player, elapsedTime, potency, previousTotalValue)
-                    local curveMultiplier = (1 - 2.44 * (elapsedTime - 0.8) ^ 4)
+                ["Effect"] = function(player, elapsedTime, potency, previousTotalValue, _)
+                    local curveMultiplier = 1 - math.abs((1.4-(2*elapsedTime))^3 * (math.log10(2.3-2*elapsedTime)))
                     player.StatusAbnormalities.Slow.Value += curveMultiplier * potency - previousTotalValue
-                    return curveMultiplier * potency, curveMultiplier * potency - previousTotalValue
+                    --print(player.StatusAbnormalities.Slow.Value)
+                    return curveMultiplier * potency
                 end
             }
         },
@@ -62,34 +63,54 @@ local CommonEffects = {
         ),
         {
             {
-                ["TickInterval"] = 0.7,
+                ["TickInterval"] = 0.5,
                 ["VariableDuration"] = true,
                 ["Duration"] = function(value)
                     return 5 + value/20
                 end,
-                ["RequiresReversal"] = false,
-                ["Effect"] = function(player, elapsedTime, potency, _previousTotalValue)
-                    --damage player
+                ["LastTickFunction"] = function(player,_)
+                    
+                    local fire = player.Character.PrimaryPart:FindFirstChild("elemental/fire_effect")
+                    print("warble",fire)
+                    fire:Destroy()
+                    fire = nil
+                end,
+                ["Effect"] = function(player, elapsedTime, potency, _, timeSinceLastTick)
+                    print("fwaaing for", potency * timeSinceLastTick * (math.log10(3*elapsedTime+1)+1))
+                    player.Character.Humanoid:TakeDamage(potency * timeSinceLastTick * (math.log10(3*elapsedTime+1)+1))
+                    
+
+                    if not player.Character.PrimaryPart:FindFirstChild("elemental/fire_effect") then
+                        local fire = Instance.new("Fire")
+
+                        fire.Parent = player.Character.PrimaryPart
+                        fire.Name = "elemental/fire_effect"
+                        fire.Heat = 6
+                        fire.Size = 6
+                    end
+
+                    
                 end
             }
         },
-        "StrongestRefresh"
+        "StrongestReplace"
     )
 }
 
 
 
+
 local debounce = true
 test.OnServerEvent:Connect(function(player,mouseHit)
-    if player.CoreStats.Mana.Value >= 30 and debounce then
+    if player.CoreStats.Mana.Value >= 30 then
         debounce = false
         player.CoreStats.Mana.Value -= 30
         
-        print(CommonEffects["status_abnormalities/cast_slow"])
+        
         StatusEffect.new(CommonEffects["status_abnormalities/cast_slow"],player,60):Apply()
 
 
-        task.wait(0.65)
+        task.wait(0.84)
         local fireball = Instance.new("Part")
         fireball.Shape = Enum.PartType.Ball
         fireball.Color = Color3.fromHex("#aa5500")
@@ -119,7 +140,7 @@ test.OnServerEvent:Connect(function(player,mouseHit)
         force.Parent = fireball
         force.Attachment0 = attachment
         
-        task.wait(0.35)
+        task.wait(1.1-0.84)
 
         debounce = true
     else
@@ -243,10 +264,23 @@ end)
 
 
 
+local burnBrick = workspace.yarrr
+local recentlyDamagedCharacters = {}
 
-
-
-
+burnBrick.Touched:Connect(function(otherPart)
+    local character = otherPart.Parent
+	local humanoid = character:FindFirstChildWhichIsA("Humanoid")
+	local player = game:GetService("Players"):GetPlayerFromCharacter(character)
+	
+	if player and humanoid and not recentlyDamagedCharacters[character] then
+		
+		StatusEffect.new(CommonEffects["elemental/fire"],player,5):Apply()
+		
+		recentlyDamagedCharacters[character] = true
+		task.wait(0.2)
+		recentlyDamagedCharacters[character] = nil
+	end
+end)
 
 
 
