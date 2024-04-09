@@ -1,3 +1,7 @@
+StatusEffect = require(script.StatusEffect)
+Effect = require(script.Effect)
+Descriptor = require(script.Descriptor)
+
 local Debris = game:GetService("Debris")
 local players = game:GetService("Players")
 local PolicyService = game:GetService("PolicyService")
@@ -6,7 +10,6 @@ local RunService = game:GetService("RunService")
 local test = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Test")
 local SlowTest = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("SlowTest")
 local NoMana = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("NoMana")
-StatusEffects = require(script.StatusEffects)
 
 
 local function numValueGeneric(parent,name,value)
@@ -22,25 +25,68 @@ local function numValueGeneric(parent,name,value)
 end
 
 
+local CommonEffects = {
+    ["status_abnormalities/cast_slow"] = Effect.new(
+        "status_abnormalities/cast_slow",
+        Descriptor.new(
+            "Status Abnormality",
+            "Casting Concentration",
+            "Currently focusing on casting... Temporary reduced movement.",
+            nil
+        ),
+        {
+            {
+                ["TickInterval"] = 0,
+                ["VariableDuration"] = false,
+                ["Duration"] = 1.4,
+                ["RequiresReversal"] = true,
+                ["Reversal"] = function(player, value)
+                    player.StatusAbnormalities.Slow.Value -= value
+                end,
+                ["Effect"] = function(player, elapsedTime, potency, previousTotalValue)
+                    local curveMultiplier = (1 - 2.44 * (elapsedTime - 0.8) ^ 4)
+                    player.StatusAbnormalities.Slow.Value += curveMultiplier * potency - previousTotalValue
+                    return curveMultiplier * potency, curveMultiplier * potency - previousTotalValue
+                end
+            }
+        },
+        "None"
+    ),
+    ["elemental/fire"] = Effect.new(
+        "elemental/fire",
+        Descriptor.new(
+            "Elemental Effect",
+            "Burn",
+            "Currently being immolated!",
+            nil
+        ),
+        {
+            {
+                ["TickInterval"] = 0.7,
+                ["VariableDuration"] = true,
+                ["Duration"] = function(value)
+                    return 5 + value/20
+                end,
+                ["RequiresReversal"] = false,
+                ["Effect"] = function(player, elapsedTime, potency, _previousTotalValue)
+                    --damage player
+                end
+            }
+        },
+        "StrongestRefresh"
+    )
+}
+
+
 
 local debounce = true
-
 test.OnServerEvent:Connect(function(player,mouseHit)
     if player.CoreStats.Mana.Value >= 30 and debounce then
         debounce = false
         player.CoreStats.Mana.Value -= 30
         
-        local castSlow = StatusEffects.New(
-            "system/spell_cast_slow",
-            "Casting Concentration",
-            1,
-            65,
-            {["TYPE"] = "StatusAbnormalities",["NAME"] = "Slow"},
-            function(time) return 1- 16 * (time - 0.5)^4 end,
-            "StrongestReplace"
-        )
-        
-        castSlow:Apply(player)
+        print(CommonEffects["status_abnormalities/cast_slow"])
+        StatusEffect.new(CommonEffects["status_abnormalities/cast_slow"],player,60):Apply()
 
 
         task.wait(0.65)

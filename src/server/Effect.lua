@@ -2,13 +2,15 @@ Effect = {}
 Effect.__index = Effect
 
 
-function Effect.New(fields)
+function Effect.new(effectID, descriptor, fields, combineType)
     local effect = {}
     setmetatable(effect,Effect)
 
-    effect.Descriptor = "None"
+    effect.Descriptor = descriptor
+    effect.EffectID = effectID
     effect.Fields = fields
-    effect.Image = ""
+    effect.CombineType = combineType
+    
 
     return effect
 end
