@@ -1,16 +1,18 @@
 StatusEffect = require(script.StatusEffect)
 Effect = require(script.Effect)
 Descriptor = require(script.Descriptor)
+Damage = require(script.Damage)
 
 local Debris = game:GetService("Debris")
 local players = game:GetService("Players")
 local PolicyService = game:GetService("PolicyService")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local test = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Test")
 local SlowTest = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("SlowTest")
 local NoMana = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("NoMana")
-
+local ServerStorage = game:GetService("ServerStorage")
 
 
 local function numValueGeneric(parent,name,value)
@@ -26,6 +28,34 @@ local function numValueGeneric(parent,name,value)
 end
 
 local CommonEffects = {
+    ["system/cast_cooldown"] = Effect.new(
+        "system/cast_cooldown",
+        Descriptor.new(
+            "System effects",
+            "Unable to cast",
+            "You shouldn't be able to read this...",
+            nil
+        ),
+        {
+            {
+                ["TickInterval"] = 0,
+                ["VariableDuration"] = true,
+                ["Duration"] = function(value)
+                    return value
+                end,
+                ["LastTickFunction"] = function(player,_)
+                    player.Variables.CastCooldown.Value -= 1
+                end,
+                ["Effect"] = function(_,_)
+                    --sobs a little
+                end,
+                ["FirstTickFunction"] = function(player,_)
+                    player.Variables.CastCooldown.Value += 1
+                end
+            }
+        },
+        "CooldownCombine"
+    ),
     ["status_abnormalities/cast_slow"] = Effect.new(
         "status_abnormalities/cast_slow",
         Descriptor.new(
@@ -48,6 +78,9 @@ local CommonEffects = {
                     player.StatusAbnormalities.Slow.Value += curveMultiplier * potency - previousTotalValue
                     --print(player.StatusAbnormalities.Slow.Value)
                     return curveMultiplier * potency
+                end,
+                ["FirstTickFunction"] = function(_,_)
+                    --lol
                 end
             }
         },
@@ -66,20 +99,18 @@ local CommonEffects = {
                 ["TickInterval"] = 0.5,
                 ["VariableDuration"] = true,
                 ["Duration"] = function(value)
-                    return 5 + value/20
+                    return 3 + value/2
                 end,
                 ["LastTickFunction"] = function(player,_)
                     
                     local fire = player.Character.PrimaryPart:FindFirstChild("elemental/fire_effect")
-                    print("warble",fire)
                     fire:Destroy()
                     fire = nil
                 end,
                 ["Effect"] = function(player, elapsedTime, potency, _, timeSinceLastTick)
-                    print("fwaaing for", potency * timeSinceLastTick * (math.log10(3*elapsedTime+1)+1))
-                    player.Character.Humanoid:TakeDamage(potency * timeSinceLastTick * (math.log10(3*elapsedTime+1)+1))
-                    
-
+                    Damage.Damage(potency * timeSinceLastTick * (math.log10(3*elapsedTime+1)+1),player,nil,nil)
+                end,
+                ["FirstTickFunction"] = function(player,_)
                     if not player.Character.PrimaryPart:FindFirstChild("elemental/fire_effect") then
                         local fire = Instance.new("Fire")
 
@@ -88,8 +119,6 @@ local CommonEffects = {
                         fire.Heat = 6
                         fire.Size = 6
                     end
-
-                    
                 end
             }
         },
@@ -100,30 +129,22 @@ local CommonEffects = {
 
 
 
-local debounce = true
+
 test.OnServerEvent:Connect(function(player,mouseHit)
-    if player.CoreStats.Mana.Value >= 30 then
-        debounce = false
+    if player.CoreStats.Mana.Value >= 30 and player.Variables.CastCooldown.Value == 0 then
+        
         player.CoreStats.Mana.Value -= 30
         
+        StatusEffect.new(CommonEffects["system/cast_cooldown"],player,3, "SELF"):Apply()
+        StatusEffect.new(CommonEffects["status_abnormalities/cast_slow"],player,60, "SELF"):Apply()
+
+
         
-        StatusEffect.new(CommonEffects["status_abnormalities/cast_slow"],player,60):Apply()
-
-
         task.wait(0.84)
-        local fireball = Instance.new("Part")
-        fireball.Shape = Enum.PartType.Ball
-        fireball.Color = Color3.fromHex("#aa5500")
-        fireball.Material = Enum.Material.Neon
-        fireball.Transparency = 1
-        fireball.Size = Vector3.new(0.8,0.8,0.8)
+        local fireball = ServerStorage.Assets.FireBall:Clone()
+        
         fireball.CanCollide = false
 
-        local fire = Instance.new("Fire")
-        fire.Parent = fireball
-        fire.Heat = 0
-        fire.TimeScale = 1
-        fire.Size = 5.2
         
         fireball.Parent = workspace.Spells
         --fireball.CFrame = CFrame.new(player.Character.HumanoidRootPart.CFrame.Position) * player.Character.Head.Neck.C0.Rotation
@@ -136,13 +157,38 @@ test.OnServerEvent:Connect(function(player,mouseHit)
         local attachment = Instance.new("Attachment", fireball)
 
         local force = Instance.new("LinearVelocity",attachment)
-        force.VectorVelocity = fireball.CFrame.LookVector * 19
+        force.VectorVelocity = fireball.CFrame.LookVector * 0
         force.Parent = fireball
         force.Attachment0 = attachment
-        
-        task.wait(1.1-0.84)
+        local glarb = 0
+        local fireballConnection
 
-        debounce = true
+        local filter = OverlapParams.new()
+        filter.FilterType = Enum.RaycastFilterType.Exclude
+        filter:AddToFilter(fireball:FindFirstChild("part1"))
+        filter:AddToFilter(fireball:FindFirstChild("Part"))
+        filter:AddToFilter(fireball)
+
+        fireballConnection = game:GetService("RunService").Stepped:Connect(function(_currentTime, deltaTime)
+            glarb += deltaTime
+            if glarb >= 10 then
+                fireball:Destroy()
+                fireballConnection:Disconnect()
+            end
+            local collisions = Workspace:GetPartsInPart(fireball:FindFirstChild("hitbox"),filter)
+
+            for i, part in collisions do
+                if part.Parent:FindFirstChild("Humanoid") then
+                    StatusEffect.new(CommonEffects["elemental/fire"],game:GetService("Players"):GetPlayerFromCharacter(part.Parent),1):Apply()
+                    
+                end
+            end
+
+        end)
+
+        task.wait(0.26)
+
+        
     else
         NoMana:FireClient(player,30/player.CoreStats.MaxMana.Value)
     end
@@ -209,7 +255,11 @@ players.PlayerAdded:Connect(function(player)
 
         --              -==(MISC)==-
         
-        
+        --        -==(PLAYER VARIABLES)==-
+        local variableFolder = Instance.new("Folder")
+        variableFolder.Name = "Variables"
+        variableFolder.Parent = player
+        numValueGeneric(variableFolder, "CastCooldown")
 
         --character.Animate.walk.WalkAnim.AnimationId = "rbxassetid://15872307313"
 		--character.Animate.run.RunAnim.AnimationId = "rbxassetid://15872263018"

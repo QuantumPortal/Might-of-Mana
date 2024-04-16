@@ -14,6 +14,9 @@ local CombineTypes = {
     ["MeanRefresh"] = function(initialEffect,addedEffect)
         return
     end,
+    ["CooldownCombine"] = function(initialEffect,addedEffect)
+        initialEffect.Potency += addedEffect.Potency
+    end,
     ["None"] = function(initialEffect,addedEffect) end
 }
 
@@ -21,7 +24,7 @@ function StatusEffect.getEffectStorageTable()
     return StatusEffectStorage
 end
 
-function StatusEffect.new(effect, player, potency)
+function StatusEffect.new(effect, player, potency, source)
     local statusEffect = {}
     
     setmetatable(statusEffect,StatusEffect)
@@ -29,6 +32,7 @@ function StatusEffect.new(effect, player, potency)
     statusEffect.Effect = effect
     statusEffect.Player = player
     statusEffect.Potency = potency
+    statusEffect.Source = source
 
     statusEffect.ElapsedTime = 0
 
@@ -56,6 +60,8 @@ function StatusEffect:Apply()
     self.Connection = game:GetService("RunService").Stepped:Connect(function(_currentTime, deltaTime)
         
         
+
+
         self.ElapsedTime += deltaTime
         local continueRunning = false
         for i, singleEffect in self.Effect.Fields do
@@ -68,6 +74,10 @@ function StatusEffect:Apply()
                 }
             end
 
+            if self.ElapsedTime == deltaTime then
+                singleEffect["FirstTickFunction"](self.Player,self.PerSingleEffectArray[i]["PreviousChange"])
+            end
+            
             
             self.PerSingleEffectArray[i]["TimeSinceLastTick"] += deltaTime
 
