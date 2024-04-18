@@ -28,21 +28,21 @@ function StatusEffect.new(effect, player, potency, source)
     local statusEffect = {}
     
     setmetatable(statusEffect,StatusEffect)
-    
     statusEffect.Effect = effect
     statusEffect.Player = player
     statusEffect.Potency = potency
     statusEffect.Source = source
 
     statusEffect.ElapsedTime = 0
-
-    statusEffect.PerSingleEffectArray = {}
+    statusEffect.SingleEffectLastTick = {}
+    statusEffect.SingleEffectRunning = {}
     statusEffect.Connection = nil
 
     return statusEffect
 end
 
 function StatusEffect:Apply()
+    
     if not StatusEffectStorage[self.Player.UserId] then
         StatusEffectStorage[self.Player.UserId] = {}
     end
@@ -57,61 +57,33 @@ function StatusEffect:Apply()
     
     print("Creating effect: >",self.Effect.EffectID,"< on player", self.Player.DisplayName)
     StatusEffectStorage[self.Player.UserId][self.Effect.EffectID] = self
-    self.Connection = game:GetService("RunService").Stepped:Connect(function(_currentTime, deltaTime)
-        
-        
+    for i, _ in self.Effect.Fields do
+        self.SingleEffectLastTick[i] = 0
+        self.SingleEffectRunning[i] = true
+    end
 
-
+    self.Connection = game:GetService("RunService").Stepped:Connect(function(_, deltaTime)
         self.ElapsedTime += deltaTime
         local continueRunning = false
+        
         for i, singleEffect in self.Effect.Fields do
-
-            if not self.PerSingleEffectArray[i] then
-                self.PerSingleEffectArray[i] = {
-                    ["TimeSinceLastTick"] = 0,
-                    ["PreviousChange"] = 0,
-                    ["CurrentlyRunning"] = true,
-                }
-            end
-
-            if self.ElapsedTime == deltaTime then
-                singleEffect["FirstTickFunction"](self.Player,self.PerSingleEffectArray[i]["PreviousChange"])
-            end
-            
-            
-            self.PerSingleEffectArray[i]["TimeSinceLastTick"] += deltaTime
-
-            if self.PerSingleEffectArray[i]["TimeSinceLastTick"]  > singleEffect["TickInterval"] and self.PerSingleEffectArray[i]["CurrentlyRunning"] then
-                local duration = singleEffect["Duration"]
-                if singleEffect["VariableDuration"] then
-                    duration = singleEffect["Duration"](self.Potency)
+            if self.SingleEffectRunning[i] then
+                self.SingleEffectLastTick[i] += deltaTime
+                local resetLastTick = false
+                self.SingleEffectRunning[i], resetLastTick = singleEffect:Execute(deltaTime,self.SingleEffectLastTick[i],self)
+                
+                if resetLastTick then
+                    self.SingleEffectLastTick[i] = 0
                 end
 
-                if self.ElapsedTime > duration then
-                    self.PerSingleEffectArray[i]["CurrentlyRunning"] = false
-                    singleEffect["LastTickFunction"](self.Player, self.PerSingleEffectArray[i]["PreviousChange"])
-                    
-                else 
-                local changeValue = singleEffect["Effect"](
-                    self.Player,
-                    self.ElapsedTime, 
-                    self.Potency, 
-                    self.PerSingleEffectArray[i]["PreviousChange"],
-                    self.PerSingleEffectArray[i]["TimeSinceLastTick"]
-                )
-
-                self.PerSingleEffectArray[i]["TimeSinceLastTick"]  = 0
-                self.PerSingleEffectArray[i]["PreviousChange"] = changeValue
-                end  
+                continueRunning = continueRunning or self.SingleEffectRunning[i]
             end
-            
-            continueRunning = continueRunning or self.PerSingleEffectArray[i]["CurrentlyRunning"]
         end
-
         
         if not continueRunning then
             self:Kill()
         end
+        
     end)
 end
 

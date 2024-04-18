@@ -1,5 +1,6 @@
 StatusEffect = require(script.StatusEffect)
 Effect = require(script.Effect)
+SingleEffect = require(script.SingleEffect)
 Descriptor = require(script.Descriptor)
 Damage = require(script.Damage)
 
@@ -27,6 +28,9 @@ local function numValueGeneric(parent,name,value)
     
 end
 
+local tracker0 = 0
+local tracker1 = 0
+local tracker2 = 0
 local CommonEffects = {
     ["system/cast_cooldown"] = Effect.new(
         "system/cast_cooldown",
@@ -37,22 +41,19 @@ local CommonEffects = {
             nil
         ),
         {
-            {
-                ["TickInterval"] = 0,
-                ["VariableDuration"] = true,
-                ["Duration"] = function(value)
-                    return value
+            SingleEffect.New(
+                0,
+                function(_,_,StatusEffect)
+                    return StatusEffect.Potency
                 end,
-                ["LastTickFunction"] = function(player,_)
-                    player.Variables.CastCooldown.Value -= 1
+                function(_,_,StatusEffect)
+                    StatusEffect.Player.Variables.CastCooldown.Value += 1
                 end,
-                ["Effect"] = function(_,_)
-                    --sobs a little
-                end,
-                ["FirstTickFunction"] = function(player,_)
-                    player.Variables.CastCooldown.Value += 1
+                nil,
+                function(_,_,StatusEffect)
+                    StatusEffect.Player.Variables.CastCooldown.Value -= 1
                 end
-            }
+            )
         },
         "CooldownCombine"
     ),
@@ -65,24 +66,29 @@ local CommonEffects = {
             nil
         ),
         {
-            {
-                ["TickInterval"] = 0,
-                ["VariableDuration"] = false,
-                ["Duration"] = 1.13,
-                ["LastTickFunction"] = function(player,value)
-                    player.StatusAbnormalities.Slow.Value -= value
-                    --print(player.StatusAbnormalities.Slow.Value)
+            SingleEffect.New(
+                0,
+                function(_,_,_)
+                    return 1.13
                 end,
-                ["Effect"] = function(player, elapsedTime, potency, previousTotalValue, _)
-                    local curveMultiplier = 1 - math.abs((1.4-(2*elapsedTime))^3 * (math.log10(2.3-2*elapsedTime)))
-                    player.StatusAbnormalities.Slow.Value += curveMultiplier * potency - previousTotalValue
-                    --print(player.StatusAbnormalities.Slow.Value)
-                    return curveMultiplier * potency
+                nil,
+                function(deltaTime,_,StatusEffect)
+                    local previousTime = StatusEffect.ElapsedTime - deltaTime
+                    local previousCurveMultiplier = 1 - math.abs((1.4-(2*previousTime))^3 * (math.log10(2.3-2*previousTime)))
+                    if StatusEffect.ElapsedTime == deltaTime then
+                        previousCurveMultiplier = 0
+                    end
+                    local curveMultiplier = 1 - math.abs((1.4-(2*StatusEffect.ElapsedTime))^3 * (math.log10(2.3-2*StatusEffect.ElapsedTime)))
+
+                    StatusEffect.Player.StatusAbnormalities.Slow.Value += (curveMultiplier - previousCurveMultiplier) * StatusEffect.Potency
                 end,
-                ["FirstTickFunction"] = function(_,_)
-                    --lol
+                function(deltaTime,_,StatusEffect)
+                    local previousTime = StatusEffect.ElapsedTime - deltaTime
+                    local previousCurveValue = 1 - math.abs((1.4-(2*previousTime))^3 * (math.log10(2.3-2*previousTime)))
+                    
+                    StatusEffect.Player.StatusAbnormalities.Slow.Value -= previousCurveValue * StatusEffect.Potency  
                 end
-            }
+            )
         },
         "None"
     ),
@@ -95,32 +101,35 @@ local CommonEffects = {
             nil
         ),
         {
-            {
-                ["TickInterval"] = 0.5,
-                ["VariableDuration"] = true,
-                ["Duration"] = function(value)
-                    return 3 + value/2
+            SingleEffect.New(
+                0.5,
+                function(_,_,StatusEffect)
+                    return 3 + StatusEffect.Potency / 2
                 end,
-                ["LastTickFunction"] = function(player,_)
-                    
-                    local fire = player.Character.PrimaryPart:FindFirstChild("elemental/fire_effect")
-                    fire:Destroy()
-                    fire = nil
-                end,
-                ["Effect"] = function(player, elapsedTime, potency, _, timeSinceLastTick)
-                    Damage.Damage(potency * timeSinceLastTick * (math.log10(3*elapsedTime+1)+1),player,nil,nil)
-                end,
-                ["FirstTickFunction"] = function(player,_)
-                    if not player.Character.PrimaryPart:FindFirstChild("elemental/fire_effect") then
+                function(_,_,StatusEffect)
+                    if not StatusEffect.Player.Character.PrimaryPart:FindFirstChild("elemental/fire_effect") then
                         local fire = Instance.new("Fire")
 
-                        fire.Parent = player.Character.PrimaryPart
+                        fire.Parent = StatusEffect.Player.Character.PrimaryPart
                         fire.Name = "elemental/fire_effect"
                         fire.Heat = 6
                         fire.Size = 6
                     end
+                end,
+                function(deltaTime,timeSinceLastTick,StatusEffect)
+                    Damage.Damage(
+                        StatusEffect.Potency * timeSinceLastTick * (math.log10(3*StatusEffect.ElapsedTime+1)+1),
+                        StatusEffect.Player,
+                        nil,
+                        nil
+                    )
+                end,
+                function(_,_,StatusEffect)
+                    local fire = StatusEffect.Player.Character.PrimaryPart:FindFirstChild("elemental/fire_effect")
+                    fire:Destroy()
+                    fire = nil
                 end
-            }
+            )
         },
         "StrongestReplace"
     )
@@ -157,7 +166,7 @@ test.OnServerEvent:Connect(function(player,mouseHit)
         local attachment = Instance.new("Attachment", fireball)
 
         local force = Instance.new("LinearVelocity",attachment)
-        force.VectorVelocity = fireball.CFrame.LookVector * 0
+        force.VectorVelocity = fireball.CFrame.LookVector * 13
         force.Parent = fireball
         force.Attachment0 = attachment
         local glarb = 0
@@ -165,22 +174,21 @@ test.OnServerEvent:Connect(function(player,mouseHit)
 
         local filter = OverlapParams.new()
         filter.FilterType = Enum.RaycastFilterType.Exclude
-        filter:AddToFilter(fireball:FindFirstChild("part1"))
-        filter:AddToFilter(fireball:FindFirstChild("Part"))
         filter:AddToFilter(fireball)
+        filter:AddToFilter(player.Character)
 
         fireballConnection = game:GetService("RunService").Stepped:Connect(function(_currentTime, deltaTime)
             glarb += deltaTime
-            if glarb >= 10 then
+            if glarb >= 4 then
                 fireball:Destroy()
                 fireballConnection:Disconnect()
-            end
-            local collisions = Workspace:GetPartsInPart(fireball:FindFirstChild("hitbox"),filter)
+            else 
+                local collisions = Workspace:GetPartsInPart(fireball:FindFirstChild("hitbox"),filter)
 
-            for i, part in collisions do
-                if part.Parent:FindFirstChild("Humanoid") then
-                    StatusEffect.new(CommonEffects["elemental/fire"],game:GetService("Players"):GetPlayerFromCharacter(part.Parent),1):Apply()
-                    
+                for i, part in collisions do
+                    if part.Parent:FindFirstChild("Humanoid") then
+                        StatusEffect.new(CommonEffects["elemental/fire"],game:GetService("Players"):GetPlayerFromCharacter(part.Parent),6):Apply()      
+                    end
                 end
             end
 
