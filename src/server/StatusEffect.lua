@@ -33,6 +33,7 @@ function StatusEffect.new(effect, player, potency, source)
     statusEffect.Potency = potency
     statusEffect.Source = source
 
+    
     statusEffect.ElapsedTime = 0
     statusEffect.SingleEffectLastTick = {}
     statusEffect.SingleEffectRunning = {}

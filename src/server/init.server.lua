@@ -3,6 +3,7 @@ Effect = require(script.Effect)
 SingleEffect = require(script.SingleEffect)
 Descriptor = require(script.Descriptor)
 Damage = require(script.Damage)
+Statblock = require(script.Statblock)
 
 local Debris = game:GetService("Debris")
 local players = game:GetService("Players")
@@ -16,17 +17,7 @@ local NoMana = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("NoMa
 local ServerStorage = game:GetService("ServerStorage")
 
 
-local function numValueGeneric(parent,name,value)
-    local thing = Instance.new("NumberValue")
-    thing.Parent = parent
-    thing.Name = name
-    if value then
-        thing.Value = value
-    else
-        thing.Value = 0
-    end
-    
-end
+
 
 local tracker0 = 0
 local tracker1 = 0
@@ -210,71 +201,35 @@ players.PlayerAdded:Connect(function(player)
         --MOVE TO IN GAME
 
 
-        --           -==(CORE STATS)==-
-        local statFolder = Instance.new("Folder")
-        statFolder.Name = "CoreStats"
-        statFolder.Parent = player
-        
-        numValueGeneric(statFolder,"Mana",100)
-        numValueGeneric(statFolder,"MaxMana",100)
-        numValueGeneric(statFolder,"BaseManaRegen",2.5)
-        numValueGeneric(statFolder,"BonusManaRegen",0)
-        numValueGeneric(statFolder,"MaxBonusManaRegen",20)
-        numValueGeneric(statFolder,"LastManaFraction")
-        numValueGeneric(statFolder,"Shield",100)
-        numValueGeneric(statFolder,"MaxShield",100)
-        numValueGeneric(statFolder,"BaseWalkSpeed",7)
-        numValueGeneric(statFolder,"SprintSpeed",1.9)
+        Statblock.new(
+            player,
+            player.Character.Humanoid,
+            {
+                ["Mana"] = 100,
+                ["MaxMana"] = 100,
+                ["BaseManaRegen"] = 2.5,
+                ["LastManaFraction"] = 0,
+                ["BonusManaRegen"] = 0,
+                ["MaxBonusManaRegen"] = 20,
+                ["Shield"] = 100,
+                ["MaxShield"] = 100,
+                ["BaseWalkSpeed"] = 7,
+                ["SprintMultiplier"] = 1.9
+            },
+            {
+                ["CastCooldown"] = 0
+            },
+            {},
+            {
+                ["Fire"] = -0.2
+            },
+            {}
+        )
 
 
-
-        --      -==(Status Abnormalities)==-
-        local debuffFolder = Instance.new("Folder")
-        debuffFolder.Name = "StatusAbnormalities"
-        debuffFolder.Parent = player
-
-        numValueGeneric(debuffFolder,"Slow")
-
-
-
-        --            -==(Buffs)==-
-        local buffFolder = Instance.new("Folder")
-        buffFolder.Name = "Buffs"
-        buffFolder.Parent = player
-
-        numValueGeneric(buffFolder,"Speed")
-
-
-
-        --          -==(Resistances)==-
-        local resistanceFolder = Instance.new("Folder")
-        resistanceFolder.Name = "Resistances"
-        resistanceFolder.Parent = player
-        numValueGeneric(resistanceFolder,"Physical")
-        numValueGeneric(resistanceFolder,"Pierce")
-        numValueGeneric(resistanceFolder,"Blunt")
-        numValueGeneric(resistanceFolder,"Slash")        
-        numValueGeneric(resistanceFolder,"Elemental")
-        numValueGeneric(resistanceFolder,"Fire")
-        numValueGeneric(resistanceFolder,"Ice")
-        numValueGeneric(resistanceFolder,"Water")
-        numValueGeneric(resistanceFolder,"Electric")
-        numValueGeneric(resistanceFolder,"Earth")
-
-        --              -==(MISC)==-
-        
-        --        -==(PLAYER VARIABLES)==-
-        local variableFolder = Instance.new("Folder")
-        variableFolder.Name = "Variables"
-        variableFolder.Parent = player
-        numValueGeneric(variableFolder, "CastCooldown")
-
-        --character.Animate.walk.WalkAnim.AnimationId = "rbxassetid://15872307313"
-		--character.Animate.run.RunAnim.AnimationId = "rbxassetid://15872263018"
-
-        statFolder.Mana.Changed:Connect(function()
-            local ManaFraction = statFolder.Mana.Value / statFolder.MaxMana.Value
-            if ManaFraction < statFolder.LastManaFraction.Value then
+        Statblock["Mana"].Changed:Connect(function()
+            local ManaFraction = Statblock["Mana"] / statFolder.MaxMana.Value
+            if ManaFraction < Statblock.LastManaFraction.Value then
                 statFolder.BonusManaRegen.Value = 0
             end
             statFolder.LastManaFraction.Value = ManaFraction

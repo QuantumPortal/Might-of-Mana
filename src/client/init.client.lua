@@ -74,6 +74,7 @@ RunService.RenderStepped:Connect(function(delay)
 	else
 		cameraTilt *= 0.93
 	end
+
 	cameraTilt = math.sign(cameraTilt) * math.floor(math.abs(cameraTilt)*100)/100
 
 	--Sprint speedup/slowdown
