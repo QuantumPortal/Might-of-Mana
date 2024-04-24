@@ -24,7 +24,7 @@ function StatusEffect.getEffectStorageTable()
     return StatusEffectStorage
 end
 
-function StatusEffect.new(effect, statblock, potency, source)
+function StatusEffect.New(effect, statblock, potency, source)
     local statusEffect = {}
     
     setmetatable(statusEffect,StatusEffect)

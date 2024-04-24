@@ -1,7 +1,7 @@
 Descriptor = {}
 Descriptor.__index = Descriptor
 
-function Descriptor.new(category, name, flavourText, imageID)
+function Descriptor.New(category, name, flavourText, imageID)
     local descriptor = {}
     setmetatable(descriptor,Descriptor)
 

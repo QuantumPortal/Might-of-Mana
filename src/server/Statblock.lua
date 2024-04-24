@@ -19,7 +19,7 @@ function Statblock.New(player,humanoid, folders)
         statblock.UniqueId = player.UserId
     else 
         statblock.UniqueId = HttpService:GenerateGUID(false)
-        humanoid.Parent.Name = statblock.UniqueId
+        humanoid:SetAttribute("UUID",statblock.UniqueId)
     end
 
     statblock.StatusEffects = {}

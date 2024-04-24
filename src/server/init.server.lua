@@ -18,9 +18,9 @@ local ServerStorage = game:GetService("ServerStorage")
 
 
 local CommonEffects = {
-    ["system/cast_cooldown"] = Effect.new(
+    ["system/cast_cooldown"] = Effect.New(
         "system/cast_cooldown",
-        Descriptor.new(
+        Descriptor.New(
             "System effects",
             "Unable to cast",
             "You shouldn't be able to read this...",
@@ -43,9 +43,9 @@ local CommonEffects = {
         },
         "CooldownCombine"
     ),
-    ["status_abnormalities/cast_slow"] = Effect.new(
+    ["status_abnormalities/cast_slow"] = Effect.New(
         "status_abnormalities/cast_slow",
-        Descriptor.new(
+        Descriptor.New(
             "Status Abnormality",
             "Casting Concentration",
             "Currently focusing on casting... Temporary reduced movement.",
@@ -78,9 +78,9 @@ local CommonEffects = {
         },
         "None"
     ),
-    ["elemental/fire"] = Effect.new(
+    ["elemental/fire"] = Effect.New(
         "elemental/fire",
-        Descriptor.new(
+        Descriptor.New(
             "Elemental Effect",
             "Burn",
             "Currently being immolated!",
@@ -130,8 +130,8 @@ test.OnServerEvent:Connect(function(player,mouseHit)
     if coreStats.Mana.Value >= 30 and system.CastCooldown.Value == 0 then
         coreStats.Mana.Value -= 30
         
-        StatusEffect.new(CommonEffects["system/cast_cooldown"],statblock,3, "SELF"):Apply()
-        StatusEffect.new(CommonEffects["status_abnormalities/cast_slow"],statblock,60, "SELF"):Apply()
+        StatusEffect.New(CommonEffects["system/cast_cooldown"],statblock,3, "SELF"):Apply()
+        StatusEffect.New(CommonEffects["status_abnormalities/cast_slow"],statblock,60, "SELF"):Apply()
 
         task.wait(0.84)
 
@@ -166,10 +166,10 @@ test.OnServerEvent:Connect(function(player,mouseHit)
                     if part.Parent:FindFirstChild("Humanoid") then
                         if PlayerService:GetPlayerFromCharacter(part.Parent) then
                             local statblock = Statblock.GetStatblock(PlayerService:GetPlayerFromCharacter(part.Parent).UserId)
-                            StatusEffect.new(CommonEffects["elemental/fire"],statblock,6):Apply()    
+                            StatusEffect.New(CommonEffects["elemental/fire"],statblock,6):Apply()    
                         else
-                            local statblock = Statblock.GetStatblock(part.Parent.Name)
-                            StatusEffect.new(CommonEffects["elemental/fire"],statblock,6):Apply()    
+                            local statblock = Statblock.GetStatblock(part.Parent:FindFirstChild("Humanoid"):GetAttribute("UUID"))
+                            StatusEffect.New(CommonEffects["elemental/fire"],statblock,6):Apply()    
                         end
                           
                     end
@@ -265,7 +265,7 @@ burnBrick.Touched:Connect(function(otherPart)
 	
 	if player and humanoid and not recentlyDamagedCharacters[character] then
 		
-		StatusEffect.new(CommonEffects["elemental/fire"],player,5):Apply()
+		StatusEffect.New(CommonEffects["elemental/fire"],player,5):Apply()
 		
 		recentlyDamagedCharacters[character] = true
 		task.wait(0.2)
@@ -288,8 +288,8 @@ Statblock.New(
             ["LastManaFraction"] = 0,
             ["BonusManaRegen"] = 0,
             ["MaxBonusManaRegen"] = 20,
-            ["Shield"] = 100,
-            ["MaxShield"] = 100,
+            ["Shield"] = 0,
+            ["MaxShield"] = 10,
             ["BaseWalkSpeed"] = 7,
             ["SprintMultiplier"] = 1.9
         },

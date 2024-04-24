@@ -2,7 +2,7 @@ Effect = {}
 Effect.__index = Effect
 
 
-function Effect.new(effectID, descriptor, fields, combineType)
+function Effect.New(effectID, descriptor, fields, combineType)
     local effect = {}
     setmetatable(effect,Effect)
 
