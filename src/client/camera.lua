@@ -1,4 +1,4 @@
-local cameraFunctions = {}
+local CameraFunctions = {}
 
 local TweenService = game:GetService('TweenService')
 local cameraTween = TweenInfo.new(
@@ -10,14 +10,14 @@ local cameraTween = TweenInfo.new(
 	0
 )
 
-function cameraFunctions.UpdateFOV(camera,base,speed)
+function CameraFunctions.UpdateFOV(camera,base,speed)
 	camera.FieldOfView = base + speed
 end
 
 local previousCameraTilt = 0
-function cameraFunctions.CameraTilt(camera,cameraTilt)
+function CameraFunctions.CameraTilt(camera,cameraTilt)
     TweenService:Create(camera,cameraTween, { CFrame = camera.CFrame * CFrame.Angles(0,0,math.rad(cameraTilt - previousCameraTilt))}):Play()
     previousCameraTilt = cameraTilt
 end
 
-return cameraFunctions
+return CameraFunctions

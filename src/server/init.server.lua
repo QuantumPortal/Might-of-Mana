@@ -10,18 +10,13 @@ local players = game:GetService("Players")
 local PolicyService = game:GetService("PolicyService")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
+local PlayerService = game:GetService("Players")
 
 local test = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Test")
-local SlowTest = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("SlowTest")
 local NoMana = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("NoMana")
 local ServerStorage = game:GetService("ServerStorage")
 
 
-
-
-local tracker0 = 0
-local tracker1 = 0
-local tracker2 = 0
 local CommonEffects = {
     ["system/cast_cooldown"] = Effect.new(
         "system/cast_cooldown",
@@ -38,11 +33,11 @@ local CommonEffects = {
                     return StatusEffect.Potency
                 end,
                 function(_,_,StatusEffect)
-                    StatusEffect.Player.Variables.CastCooldown.Value += 1
+                    StatusEffect.Statblock.DataFolder.System.CastCooldown.Value += 1
                 end,
                 nil,
                 function(_,_,StatusEffect)
-                    StatusEffect.Player.Variables.CastCooldown.Value -= 1
+                    StatusEffect.Statblock.DataFolder.System.CastCooldown.Value -= 1
                 end
             )
         },
@@ -71,13 +66,13 @@ local CommonEffects = {
                     end
                     local curveMultiplier = 1 - math.abs((1.4-(2*StatusEffect.ElapsedTime))^3 * (math.log10(2.3-2*StatusEffect.ElapsedTime)))
 
-                    StatusEffect.Player.StatusAbnormalities.Slow.Value += (curveMultiplier - previousCurveMultiplier) * StatusEffect.Potency
+                    StatusEffect.Statblock.DataFolder.StatusAbnormalities.Slow.Value += (curveMultiplier - previousCurveMultiplier) * StatusEffect.Potency
                 end,
                 function(deltaTime,_,StatusEffect)
                     local previousTime = StatusEffect.ElapsedTime - deltaTime
                     local previousCurveValue = 1 - math.abs((1.4-(2*previousTime))^3 * (math.log10(2.3-2*previousTime)))
                     
-                    StatusEffect.Player.StatusAbnormalities.Slow.Value -= previousCurveValue * StatusEffect.Potency  
+                    StatusEffect.Statblock.DataFolder.StatusAbnormalities.Slow.Value -= previousCurveValue * StatusEffect.Potency  
                 end
             )
         },
@@ -98,10 +93,10 @@ local CommonEffects = {
                     return 3 + StatusEffect.Potency / 2
                 end,
                 function(_,_,StatusEffect)
-                    if not StatusEffect.Player.Character.PrimaryPart:FindFirstChild("elemental/fire_effect") then
+                    if not StatusEffect.Statblock.Humanoid.Parent.PrimaryPart:FindFirstChild("elemental/fire_effect") then
                         local fire = Instance.new("Fire")
 
-                        fire.Parent = StatusEffect.Player.Character.PrimaryPart
+                        fire.Parent = StatusEffect.Statblock.Humanoid.Parent.PrimaryPart
                         fire.Name = "elemental/fire_effect"
                         fire.Heat = 6
                         fire.Size = 6
@@ -110,13 +105,13 @@ local CommonEffects = {
                 function(deltaTime,timeSinceLastTick,StatusEffect)
                     Damage.Damage(
                         StatusEffect.Potency * timeSinceLastTick * (math.log10(3*StatusEffect.ElapsedTime+1)+1),
-                        StatusEffect.Player,
+                        StatusEffect.Statblock,
                         nil,
                         nil
                     )
                 end,
                 function(_,_,StatusEffect)
-                    local fire = StatusEffect.Player.Character.PrimaryPart:FindFirstChild("elemental/fire_effect")
+                    local fire = StatusEffect.Statblock.Humanoid.Parent.PrimaryPart:FindFirstChild("elemental/fire_effect")
                     fire:Destroy()
                     fire = nil
                 end
@@ -127,37 +122,28 @@ local CommonEffects = {
 }
 
 
-
-
-
 test.OnServerEvent:Connect(function(player,mouseHit)
-    if player.CoreStats.Mana.Value >= 30 and player.Variables.CastCooldown.Value == 0 then
-        
-        player.CoreStats.Mana.Value -= 30
-        
-        StatusEffect.new(CommonEffects["system/cast_cooldown"],player,3, "SELF"):Apply()
-        StatusEffect.new(CommonEffects["status_abnormalities/cast_slow"],player,60, "SELF"):Apply()
+    local statblock = Statblock.GetStatblock(player.UserId)
+    local coreStats = statblock.DataFolder.CoreStats
+    local system = statblock.DataFolder.System
 
-
+    if coreStats.Mana.Value >= 30 and system.CastCooldown.Value == 0 then
+        coreStats.Mana.Value -= 30
         
+        StatusEffect.new(CommonEffects["system/cast_cooldown"],statblock,3, "SELF"):Apply()
+        StatusEffect.new(CommonEffects["status_abnormalities/cast_slow"],statblock,60, "SELF"):Apply()
+
         task.wait(0.84)
+
         local fireball = ServerStorage.Assets.FireBall:Clone()
-        
         fireball.CanCollide = false
-
-        
         fireball.Parent = workspace.Spells
-        --fireball.CFrame = CFrame.new(player.Character.HumanoidRootPart.CFrame.Position) * player.Character.Head.Neck.C0.Rotation
-        --fireball.CFrame += Vector3.new(3,3,3) * player.Character.Head.Neck.C0.LookVector
-
-        
         fireball.CFrame = CFrame.lookAt(player.Character.HumanoidRootPart.CFrame.Position,mouseHit)
         fireball.CFrame += Vector3.new(2,2,2) * fireball.CFrame.LookVector
 
         local attachment = Instance.new("Attachment", fireball)
-
         local force = Instance.new("LinearVelocity",attachment)
-        force.VectorVelocity = fireball.CFrame.LookVector * 13
+        force.VectorVelocity = fireball.CFrame.LookVector * 19
         force.Parent = fireball
         force.Attachment0 = attachment
         local glarb = 0
@@ -178,7 +164,14 @@ test.OnServerEvent:Connect(function(player,mouseHit)
 
                 for i, part in collisions do
                     if part.Parent:FindFirstChild("Humanoid") then
-                        StatusEffect.new(CommonEffects["elemental/fire"],game:GetService("Players"):GetPlayerFromCharacter(part.Parent),6):Apply()      
+                        if PlayerService:GetPlayerFromCharacter(part.Parent) then
+                            local statblock = Statblock.GetStatblock(PlayerService:GetPlayerFromCharacter(part.Parent).UserId)
+                            StatusEffect.new(CommonEffects["elemental/fire"],statblock,6):Apply()    
+                        else
+                            local statblock = Statblock.GetStatblock(part.Parent.Name)
+                            StatusEffect.new(CommonEffects["elemental/fire"],statblock,6):Apply()    
+                        end
+                          
                     end
                 end
             end
@@ -186,96 +179,81 @@ test.OnServerEvent:Connect(function(player,mouseHit)
         end)
 
         task.wait(0.26)
-
-        
     else
-        NoMana:FireClient(player,30/player.CoreStats.MaxMana.Value)
+        NoMana:FireClient(player,30/coreStats.MaxMana.Value)
     end
 end)
 
 
-
 players.PlayerAdded:Connect(function(player)
-
     player.CharacterAppearanceLoaded:Connect(function(character)
-        --MOVE TO IN GAME
-
-
-        Statblock.new(
+        local statblock = Statblock.New(
             player,
             player.Character.Humanoid,
             {
-                ["Mana"] = 100,
-                ["MaxMana"] = 100,
-                ["BaseManaRegen"] = 2.5,
-                ["LastManaFraction"] = 0,
-                ["BonusManaRegen"] = 0,
-                ["MaxBonusManaRegen"] = 20,
-                ["Shield"] = 100,
-                ["MaxShield"] = 100,
-                ["BaseWalkSpeed"] = 7,
-                ["SprintMultiplier"] = 1.9
-            },
-            {
-                ["CastCooldown"] = 0
-            },
-            {},
-            {
-                ["Fire"] = -0.2
-            },
-            {}
+                ["CoreStats"] = {
+                    ["Mana"] = 100,
+                    ["MaxMana"] = 100,
+                    ["BaseManaRegen"] = 2.5,
+                    ["LastManaFraction"] = 0,
+                    ["BonusManaRegen"] = 0,
+                    ["MaxBonusManaRegen"] = 20,
+                    ["Shield"] = 100,
+                    ["MaxShield"] = 100,
+                    ["BaseWalkSpeed"] = 7,
+                    ["SprintMultiplier"] = 1.9
+                },
+                ["System"] = {
+                    ["CastCooldown"] = 0
+                },
+                ["Resistances"] = {
+                    ["Fire"] = -0.2
+                },
+                ["StatusAbnormalities"] = {
+                    ["Slow"] = 0
+                },
+                ["Buffs"] = {
+                    ["Speed"] = 0
+                }
+            }
         )
 
-
-        Statblock["Mana"].Changed:Connect(function()
-            local ManaFraction = Statblock["Mana"] / statFolder.MaxMana.Value
-            if ManaFraction < Statblock.LastManaFraction.Value then
-                statFolder.BonusManaRegen.Value = 0
+        statblock.DataFolder.CoreStats.Mana.Changed:Connect(function()
+            local ManaFraction = statblock.DataFolder.CoreStats.Mana.Value / statblock.DataFolder.CoreStats.MaxMana.Value
+            if ManaFraction < statblock.DataFolder.CoreStats.LastManaFraction.Value then
+                statblock.DataFolder.CoreStats.BonusManaRegen.Value = 0
             end
-            statFolder.LastManaFraction.Value = ManaFraction
+            statblock.DataFolder.CoreStats.LastManaFraction.Value = ManaFraction
         end)
     end)
-
-    
-    
 end)
+
 
 RunService.Stepped:Connect(function(_currentTime, deltaTime)
     for _, player in players:GetPlayers() do
-        if player.HasAppearanceLoaded then
-            local CoreStats = player:WaitForChild("CoreStats")
-            local Mana = CoreStats:WaitForChild("Mana")
-            local MaxMana = CoreStats:WaitForChild("MaxMana")
-            local BaseManaRegen = CoreStats:WaitForChild("BaseManaRegen")
-            local BonusManaRegen = CoreStats:WaitForChild("BonusManaRegen")
-            local MaxBonusManaRegen = CoreStats:WaitForChild("MaxBonusManaRegen")
-            local Shield = CoreStats:WaitForChild("Shield")
-            local MaxShield = CoreStats:WaitForChild("MaxShield")
+        if player.HasAppearanceLoaded and Statblock.GetStatblock(player.UserId) then
+            local statblock = Statblock.GetStatblock(player.UserId)
+            local coreStats = statblock.DataFolder.CoreStats
 
-            BonusManaRegen.Value += MaxBonusManaRegen.Value * deltaTime * math.clamp(math.pow(BonusManaRegen.Value,3),1,(MaxBonusManaRegen.Value * 5)) * (1/(MaxBonusManaRegen.Value * 5))
+
+            coreStats.BonusManaRegen.Value += coreStats.MaxBonusManaRegen.Value * deltaTime * math.clamp(
+                math.pow(coreStats.BonusManaRegen.Value,3),1,
+                (coreStats.MaxBonusManaRegen.Value * 5)) * (1/(coreStats.MaxBonusManaRegen.Value * 5)
+            )
             
-            if MaxBonusManaRegen.Value < BonusManaRegen.Value then
-                BonusManaRegen.Value =  MaxBonusManaRegen.Value    
+            if coreStats.MaxBonusManaRegen.Value < coreStats.BonusManaRegen.Value then
+                coreStats.BonusManaRegen.Value =  coreStats.MaxBonusManaRegen.Value    
             end
-            Mana.Value += (BaseManaRegen.Value + BonusManaRegen.Value ) * deltaTime  
+            coreStats.Mana.Value += (coreStats.BaseManaRegen.Value + coreStats.BonusManaRegen.Value ) * deltaTime  
             
 
-            if Shield.Value > MaxShield.Value then
-                Shield.Value = MaxShield.Value
-            elseif Shield.Value < 0 then
-                Shield.Value = 0
-            end
-            if Mana.Value > MaxMana.Value then
-                Mana.Value = MaxMana.Value
-            elseif Mana.Value < 0 then
-                Mana.Value = 0
-            end
+            coreStats.Mana.Value = math.clamp(coreStats.Mana.Value,0,coreStats.MaxMana.Value)  
         end
     end
 end)
 
 
-
+-- TESTING SECTION
 
 local burnBrick = workspace.yarrr
 local recentlyDamagedCharacters = {}
@@ -298,4 +276,35 @@ end)
 
 
 
+local Seb = workspace.Sebastian
+Statblock.New(
+    nil,
+    Seb.Humanoid,
+    {
+        ["CoreStats"] = {
+            ["Mana"] = 100,
+            ["MaxMana"] = 100,
+            ["BaseManaRegen"] = 2.5,
+            ["LastManaFraction"] = 0,
+            ["BonusManaRegen"] = 0,
+            ["MaxBonusManaRegen"] = 20,
+            ["Shield"] = 100,
+            ["MaxShield"] = 100,
+            ["BaseWalkSpeed"] = 7,
+            ["SprintMultiplier"] = 1.9
+        },
+        ["System"] = {
+            ["CastCooldown"] = 0
+        },
+        ["Resistances"] = {
+            ["Fire"] = -0.2
+        },
+        ["StatusAbnormalities"] = {
+            ["Slow"] = 0
+        },
+        ["Buffs"] = {
+            ["Speed"] = 0
+        }
+    }
+)
 

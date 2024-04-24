@@ -1,4 +1,4 @@
-local characterFunctions = {}
+local CharacterFunctions = {}
 
 
 local TweenService = game:GetService('TweenService')
@@ -11,7 +11,7 @@ local torsoTween = TweenInfo.new(
 	0
 )
 
-function characterFunctions.DirectionalTilt(player)
+function CharacterFunctions.DirectionalTilt(player)
     local character = player.Character
     local humanoid = character.Humanoid
     local rootPart = character.HumanoidRootPart
@@ -41,7 +41,7 @@ function characterFunctions.DirectionalTilt(player)
     TweenService:Create(waist,torsoTween, {C0 = targetWaist}):Play()
 end
 
-function characterFunctions.LookToMouse(player)
+function CharacterFunctions.LookToMouse(player)
     local mouse = player:GetMouse()
     local character = player.Character
     local rootPart = character.HumanoidRootPart
@@ -59,4 +59,4 @@ function characterFunctions.LookToMouse(player)
 	
 end
 
-return characterFunctions
+return CharacterFunctions
