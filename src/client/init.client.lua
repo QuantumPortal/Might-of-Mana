@@ -6,13 +6,14 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 
-
+local SprintStatus = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("SprintStatus")
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:FindFirstChild("Humanoid") or character:WaitForChild("Humanoid")
 local camera = workspace.Camera
 local cameraTilt = 0
+local mousePositionRemote = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("System"):WaitForChild("GetMousePos")
 
 local baseFOV = 70
 
@@ -33,16 +34,20 @@ local Slow = StatusAbnormalities:WaitForChild("Slow")
 local Buffs = player.Character.Humanoid.DataFolder.Buffs
 local Speed = Buffs:WaitForChild("Speed")
 
+
+local keybinds = {
+	[Enum.KeyCode.Q] = "spell_1",
+	[Enum.KeyCode.E] = "spell_2",
+	[Enum.KeyCode.R] = "spell_3",
+	[Enum.KeyCode.F] = "flash",
+}
+
 UserInputService.InputBegan:Connect(function(input, _gameProcessed)
-	if input.KeyCode == Enum.KeyCode.E then
-		SlowTest:FireServer()
-	elseif input.KeyCode == Enum.KeyCode.Q then
-		test:FireServer(mouse.Hit.Position)
+	if keybinds[input.KeyCode] then
+		game.ReplicatedStorage.Remotes.Keybinds.Rebindable:FireServer(keybinds[input.KeyCode])
 	end
 end)
 
-humanoid.WalkSpeed = BaseWalkSpeed.Value
-humanoid.AutoRotate = false
 
 player.CharacterAdded:Connect(function(character)
 	humanoid = character:WaitForChild("Humanoid")
@@ -51,17 +56,12 @@ player.CharacterAdded:Connect(function(character)
 end)
 
 
-BaseWalkSpeed.Changed:Connect(function()
-	if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-		humanoid.WalkSpeed = BaseWalkSpeed.Value * SprintSpeed.Value
-	else
-		humanoid.WalkSpeed = BaseWalkSpeed.Value
-	end
-	
-end)
-
+mousePositionRemote.OnClientInvoke = function()
+	return mouse.Hit
+end
 
 RunService.RenderStepped:Connect(function(delay)
+	SprintStatus:FireServer(UserInputService:IsKeyDown(Enum.KeyCode.LeftShift))
 
 	--Held Key section
 
@@ -78,18 +78,6 @@ RunService.RenderStepped:Connect(function(delay)
 
 	cameraTilt = math.sign(cameraTilt) * math.floor(math.abs(cameraTilt)*100)/100
 
-	--Sprint speedup/slowdown
-
-	if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
-		SprintBonus += (SprintSpeed.Value-SprintBonus)/6
-	else
-		SprintBonus -= (SprintBonus-1)/6
-		if SprintBonus < 1 then
-			SprintBonus = 1
-		end
-	end
-
-	humanoid.WalkSpeed = (1+Speed.Value) * (1-Slow.Value/100) * ( BaseWalkSpeed.Value * SprintBonus )
 
 	if humanoid and humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
 		characterFunctions.DirectionalTilt(player)

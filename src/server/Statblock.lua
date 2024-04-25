@@ -30,17 +30,17 @@ function Statblock.New(player,humanoid, folders)
     print("Data folder created!")
 
     for category, categoryValues in pairs(folders) do
-        print(category, " folder created!")
-        local categoryFolder = Instance.new("Folder")
-        categoryFolder.Parent = dataFolder
-        categoryFolder.Name = category
+            print(category, " folder created!")
+            local categoryFolder = Instance.new("Folder")
+            categoryFolder.Parent = dataFolder
+            categoryFolder.Name = category
 
-        for stat, statValue in pairs(categoryValues) do
-            local numValueStat = Instance.new("NumberValue")
-            numValueStat.Parent = categoryFolder
-            numValueStat.Name = stat
-            numValueStat.Value = statValue
-        end
+            for stat, statValue in pairs(categoryValues) do
+                local numValueStat = Instance.new("NumberValue")
+                numValueStat.Parent = categoryFolder
+                numValueStat.Name = stat
+                numValueStat.Value = statValue
+            end
     end
 
     statblock.DataFolder = dataFolder
