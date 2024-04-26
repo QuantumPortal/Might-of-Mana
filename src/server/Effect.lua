@@ -56,25 +56,29 @@ local CommonEffects = {
         {
             SingleEffect.New(
                 0,
-                function(_,_,_)
-                    return 1.13
+                function(_,_,StatusEffect)
+                    return StatusEffect.Potency
                 end,
                 nil,
                 function(deltaTime,_,StatusEffect)
                     local previousTime = StatusEffect.ElapsedTime - deltaTime
-                    local previousCurveMultiplier = 1 - math.abs((1.4-(2*previousTime))^3 * (math.log10(2.3-2*previousTime)))
+                    local strechedPreviousTime = 2 * previousTime / StatusEffect.Potency
+                    local previousCurveMultiplier = 1 - math.abs((1.4-strechedPreviousTime)^3 * (math.log10(2.3-strechedPreviousTime)))
+                    
                     if StatusEffect.ElapsedTime == deltaTime then
                         previousCurveMultiplier = 0
                     end
-                    local curveMultiplier = 1 - math.abs((1.4-(2*StatusEffect.ElapsedTime))^3 * (math.log10(2.3-2*StatusEffect.ElapsedTime)))
+                    local strechedCurrentTime = 2 * StatusEffect.ElapsedTime / StatusEffect.Potency
+                    local curveMultiplier = 1 - math.abs((1.4-strechedCurrentTime)^3 * (math.log10(2.3-strechedCurrentTime)))
 
-                    StatusEffect.Statblock.DataFolder.StatusAbnormalities.Slow.Value += (curveMultiplier - previousCurveMultiplier) * StatusEffect.Potency
+                    StatusEffect.Statblock.DataFolder.StatusAbnormalities.Slow.Value += (curveMultiplier - previousCurveMultiplier) * 65
                 end,
                 function(deltaTime,_,StatusEffect)
                     local previousTime = StatusEffect.ElapsedTime - deltaTime
-                    local previousCurveValue = 1 - math.abs((1.4-(2*previousTime))^3 * (math.log10(2.3-2*previousTime)))
+                    local strechedPreviousTime = 2 * previousTime / StatusEffect.Potency
+                    local previousCurveMultiplier = 1 - math.abs((1.4-strechedPreviousTime)^3 * (math.log10(2.3-strechedPreviousTime)))
                     
-                    StatusEffect.Statblock.DataFolder.StatusAbnormalities.Slow.Value -= previousCurveValue * StatusEffect.Potency  
+                    StatusEffect.Statblock.DataFolder.StatusAbnormalities.Slow.Value -= previousCurveMultiplier * 65 
                 end
             )
         },

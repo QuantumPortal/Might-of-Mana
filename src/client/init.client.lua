@@ -39,7 +39,7 @@ local keybinds = {
 	[Enum.KeyCode.Q] = "spell_1",
 	[Enum.KeyCode.E] = "spell_2",
 	[Enum.KeyCode.R] = "spell_3",
-	[Enum.KeyCode.F] = "flash",
+	[Enum.KeyCode.F] = "flash"
 }
 
 UserInputService.InputBegan:Connect(function(input, _gameProcessed)

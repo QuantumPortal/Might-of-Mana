@@ -6,6 +6,7 @@ Damage = require(script.Damage)
 Statblock = require(script.Statblock)
 PlayerFunctions = require(script.PlayerFunctions)
 Spell = require(script.Spell)
+DamageProfile = require(script.DamageProfile)
 
 local Debris = game:GetService("Debris")
 local players = game:GetService("Players")
@@ -29,38 +30,23 @@ local CommonSpells = {
             "Flaem ball,,,,,,,,,,,",
             nil
         ),
-        24,
-        function(statblock)
-            local player = statblock.Player
-            task.wait(0.84)
-            local fireball = ServerStorage.Assets.FireBall:Clone()
-            fireball.CanCollide = false
-            fireball.Parent = workspace.Spells
-            local mouseCFrame = PlayerFunctions.GetMousePosition(player)
-            
-            local mouseHit = mouseCFrame.Position
-            
-            --##TODO## Fix temporarylogic.
-            --if mouseHit.Y < player.Character.PrimaryPart.CFrame.Position.Y then
-            --    mouseHit = Vector3.new(mouseHit.X,player.Character.PrimaryPart.CFrame.Position.Y ,mouseHit.Z)
-           -- end
-
-
-            fireball.CFrame = CFrame.lookAt(player.Character.HumanoidRootPart.CFrame.Position,mouseHit)
-            fireball.CFrame += Vector3.new(2,2,2) * fireball.CFrame.LookVector
-
-            local attachment = Instance.new("Attachment", fireball)
+        "Fireball_Basic",
+        20,
+        1.13,
+        2,
+        5,
+        function(part)
+            local attachment = Instance.new("Attachment",part)
             local force = Instance.new("LinearVelocity",attachment)
-            force.VectorVelocity = fireball.CFrame.LookVector * 47
-            force.Parent = fireball
+            force.Name = "Force"
+            force.VectorVelocity = part.CFrame.LookVector * 40
             force.Attachment0 = attachment
-            local glarb = 0
+        end,
+        function(statblock,spell)
+            local player = statblock.Player
             local fireballConnection
-
-            local filter = OverlapParams.new()
-            filter.FilterType = Enum.RaycastFilterType.Exclude
-            filter:AddToFilter(fireball)
-            filter:AddToFilter(player.Character)
+            local timeout = 0
+            local hitStatblocks = {}
 
             local explodeTween = TweenInfo.new(
                 0.2,
@@ -70,41 +56,74 @@ local CommonSpells = {
                 false,
                 0
             )
-            local function ablowup()
-                TweenService:Create(fireball.part1,explodeTween, {Size = Vector3.new(5,5,5)}):Play()
-                        TweenService:Create(fireball.part1,explodeTween, {Transparency = 0.7}):Play()
-                        fireballConnection:Disconnect()
-                        task.wait(0.1)
-                        fireball:Destroy()
+
+            task.wait(spell.SpellCasttime * 1.134 - 0.2 * math.sqrt(spell.SpellCasttime))
+
+            local mouseHit = PlayerFunctions.GetMousePosition(player).Position
+            local fireballFolder = ServerStorage.Assets.Spells:FindFirstChild(spell.ModelID):Clone()
+            fireballFolder.Parent = workspace.Spells
+            fireballFolder.Name = spell.ModelID ..  statblock.Player.UserId
+            local hitbox = fireballFolder.Hitbox
+            local visual = fireballFolder.Visual
+
+            hitbox.CFrame = CFrame.lookAt(player.Character.HumanoidRootPart.CFrame.Position,mouseHit)
+            hitbox.CFrame += Vector3.new(2,2,2) * hitbox.CFrame.LookVector
+            visual.CFrame = hitbox.CFrame            
+            visual:SetNetworkOwner(player)
+            hitbox:SetNetworkOwner(nil)
+
+            spell.MovementBehavior(hitbox)
+            spell.MovementBehavior(visual)
+
+            local filter = OverlapParams.new()
+            filter.FilterType = Enum.RaycastFilterType.Exclude
+            filter:AddToFilter(visual)
+            filter:AddToFilter(hitbox)
+            filter:AddToFilter(player.Character)            
+
+            local function blowUpFireball()
+                TweenService:Create(hitbox,explodeTween, {Size = Vector3.new(7,7,7)}):Play()
+
+                TweenService:Create(visual.part1,explodeTween, {Size = Vector3.new(7,7,7)}):Play()
+                TweenService:Create(visual.part1,explodeTween, {Transparency = 1}):Play()
+
+                hitbox.Attachment.Force.VectorVelocity *= 0
+                visual.Attachment.Force.VectorVelocity *= 0
+
+                fireballConnection:Disconnect()
+                task.wait(0.15)
+                fireballFolder:Destroy()
             end
-            fireballConnection = game:GetService("RunService").Stepped:Connect(function(_currentTime, deltaTime)
-                glarb += deltaTime  
-                if glarb >= 4 then
-                    fireball:Destroy()
-                    fireballConnection:Disconnect()
+
+            fireballConnection = RunService.Stepped:Connect(function(_currentTime, deltaTime)
+                timeout += deltaTime  
+                if timeout >= spell.SpellDuration then
+                    blowUpFireball()
                 else 
-                    local collisions = Workspace:GetPartsInPart(fireball:FindFirstChild("hitbox"),filter)
+                    local collisions = Workspace:GetPartsInPart(hitbox,filter)
                     local blowup = false
-                    for i, part in collisions do
+                    for _, part in collisions do
+                        local detectedStatblock = nil
                         blowup = true
-                        if part.Parent:FindFirstChild("Humanoid") then
-                            if PlayerService:GetPlayerFromCharacter(part.Parent) then
-                                local statblock = Statblock.GetStatblock(PlayerService:GetPlayerFromCharacter(part.Parent).UserId)
-                                Damage.Damage(35,statblock,nil,nil)
-                                StatusEffect.New(Effect.GetCommonEffect("elemental/fire"),statblock,6):Apply()   
-                                ablowup() 
-                            else
-                                local statblock = Statblock.GetStatblock(part.Parent:FindFirstChild("Humanoid"):GetAttribute("UUID"))
-                                Damage.Damage(35,statblock,nil,nil)
-                                StatusEffect.New(Effect.GetCommonEffect("elemental/fire"),statblock,6):Apply()    
-                                ablowup()
-                            end
-                            
+                        if part.Parent:FindFirstChild("Humanoid") and PlayerService:GetPlayerFromCharacter(part.Parent) then
+                            detectedStatblock = Statblock.GetStatblock(PlayerService:GetPlayerFromCharacter(part.Parent).UserId)
+                        elseif part.Parent:FindFirstChild("Humanoid") then
+                            detectedStatblock = Statblock.GetStatblock(part.Parent:FindFirstChild("Humanoid"):GetAttribute("UUID"))
+                        end
+                        if detectedStatblock and not hitStatblocks[detectedStatblock.UniqueId] then
+                            DamageProfile.New(statblock,detectedStatblock,{
+                                ["Fire"] = 35,
+                                ["Arcane"] = 15,
+                            }, "Normal"
+                            ):Activate()
+                            StatusEffect.New(Effect.GetCommonEffect("elemental/fire"),detectedStatblock,6):Apply()   
+                            hitStatblocks[detectedStatblock.UniqueId] = 1
                         end
                     end
                     if blowup then
-                        ablowup()
+                        blowUpFireball()
                     end
+                    
                 end
             end)
         end
@@ -133,11 +152,9 @@ Rebindable.OnServerEvent:Connect(function(player,code)
         local statblock = Statblock.GetStatblock(player.UserId)
         local spell = testEquippedSpells[spellIndex]
         if spell and statblock.DataFolder.System.CastCooldown.Value == 0 then
-            if spell.Cost < statblock.DataFolder.CoreStats.Mana.Value then
-                statblock.DataFolder.CoreStats.Mana.Value -= spell.Cost
-                StatusEffect.New(Effect.GetCommonEffect("system/cast_cooldown"),statblock,3, "SELF"):Apply()
-                StatusEffect.New(Effect.GetCommonEffect("status_abnormalities/cast_slow"),statblock,60, "SELF"):Apply()
-                spell.SpellFunction(statblock)
+            if spell.ManaCost < statblock.DataFolder.CoreStats.Mana.Value then
+                statblock.DataFolder.CoreStats.Mana.Value -= spell.ManaCost
+                spell:Activate(statblock)
             else
                 NoMana:FireClient(player,spell.Cost/statblock.DataFolder.CoreStats.MaxMana.Value)
             end 
@@ -166,7 +183,8 @@ players.PlayerAdded:Connect(function(player)
                     ["IsSprintValue"] = 0
                 },
                 ["System"] = {
-                    ["CastCooldown"] = 0
+                    ["CastCooldown"] = 0,
+                    ["JumpCooldown"] = 0
                 },
                 ["Resistances"] = {
                     ["Fire"] = -0.2
@@ -181,6 +199,8 @@ players.PlayerAdded:Connect(function(player)
         )
         PlayerFunctions.UpdateSpeed(statblock)
         character.Humanoid.AutoRotate = false
+        player.Character.Humanoid.JumpHeight = 3
+        player.Character.Humanoid.UseJumpPower = false
 
         statblock.DataFolder.CoreStats.Mana.Changed:Connect(function()
             local ManaFraction = statblock.DataFolder.CoreStats.Mana.Value / statblock.DataFolder.CoreStats.MaxMana.Value
@@ -229,34 +249,18 @@ RunService.Stepped:Connect(function(_currentTime, deltaTime)
             
 
             coreStats.Mana.Value = math.clamp(coreStats.Mana.Value,0,coreStats.MaxMana.Value)  
+
+            statblock.DataFolder.System.JumpCooldown.Value -= deltaTime
+            if statblock.DataFolder.System.JumpCooldown.Value < 0 then
+                statblock.DataFolder.System.JumpCooldown.Value = 0
+            end
+
         end
     end
 end)
 
 
 -- TESTING SECTION
-
-local burnBrick = workspace.yarrr
-local recentlyDamagedCharacters = {}
-
-burnBrick.Touched:Connect(function(otherPart)
-    local character = otherPart.Parent
-	local humanoid = character:FindFirstChildWhichIsA("Humanoid")
-	local player = game:GetService("Players"):GetPlayerFromCharacter(character)
-	
-	if player and humanoid and not recentlyDamagedCharacters[character] then
-		
-		StatusEffect.New(Effect.GetCommonEffect("elemental/fire"),player,5):Apply()
-		
-		recentlyDamagedCharacters[character] = true
-		task.wait(0.2)
-		recentlyDamagedCharacters[character] = nil
-	end
-end)
-
-
-
-
 local Seb = workspace.Sebastian
 Statblock.New(
     nil,
@@ -278,7 +282,7 @@ Statblock.New(
             ["CastCooldown"] = 0
         },
         ["Resistances"] = {
-            ["Fire"] = -0.2
+            ["Fire"] = 0
         },
         ["StatusAbnormalities"] = {
             ["Slow"] = 0
@@ -289,3 +293,34 @@ Statblock.New(
     }
 )
 
+local Seb2 = workspace.FireproofSebastian
+Statblock.New(
+    nil,
+    Seb2.Humanoid,
+    {
+        ["CoreStats"] = {
+            ["Mana"] = 100,
+            ["MaxMana"] = 100,
+            ["BaseManaRegen"] = 2.5,
+            ["LastManaFraction"] = 0,
+            ["BonusManaRegen"] = 0,
+            ["MaxBonusManaRegen"] = 20,
+            ["Shield"] = 0,
+            ["MaxShield"] = 10,
+            ["BaseWalkSpeed"] = 7,
+            ["SprintMultiplier"] = 1.9
+        },
+        ["System"] = {
+            ["CastCooldown"] = 0
+        },
+        ["Resistances"] = {
+            ["Fire"] = 0.7
+        },
+        ["StatusAbnormalities"] = {
+            ["Slow"] = 0
+        },
+        ["Buffs"] = {
+            ["Speed"] = 0
+        }
+    }
+)
