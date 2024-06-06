@@ -62,23 +62,23 @@ local CommonEffects = {
                 nil,
                 function(deltaTime,_,StatusEffect)
                     local previousTime = StatusEffect.ElapsedTime - deltaTime
-                    local strechedPreviousTime = 2 * previousTime / StatusEffect.Potency
+                    local strechedPreviousTime = 2 * previousTime
                     local previousCurveMultiplier = 1 - math.abs((1.4-strechedPreviousTime)^3 * (math.log10(2.3-strechedPreviousTime)))
                     
                     if StatusEffect.ElapsedTime == deltaTime then
                         previousCurveMultiplier = 0
                     end
-                    local strechedCurrentTime = 2 * StatusEffect.ElapsedTime / StatusEffect.Potency
+                    local strechedCurrentTime = 2 * StatusEffect.ElapsedTime
                     local curveMultiplier = 1 - math.abs((1.4-strechedCurrentTime)^3 * (math.log10(2.3-strechedCurrentTime)))
 
-                    StatusEffect.Statblock.DataFolder.StatusAbnormalities.Slow.Value += (curveMultiplier - previousCurveMultiplier) * 65
+                    StatusEffect.Statblock.DataFolder.StatusAbnormalities.Slow.Value += (curveMultiplier - previousCurveMultiplier) * 60
                 end,
                 function(deltaTime,_,StatusEffect)
                     local previousTime = StatusEffect.ElapsedTime - deltaTime
-                    local strechedPreviousTime = 2 * previousTime / StatusEffect.Potency
+                    local strechedPreviousTime = 2 * previousTime
                     local previousCurveMultiplier = 1 - math.abs((1.4-strechedPreviousTime)^3 * (math.log10(2.3-strechedPreviousTime)))
                     
-                    StatusEffect.Statblock.DataFolder.StatusAbnormalities.Slow.Value -= previousCurveMultiplier * 65 
+                    StatusEffect.Statblock.DataFolder.StatusAbnormalities.Slow.Value -= previousCurveMultiplier * 60
                 end
             )
         },

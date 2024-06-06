@@ -22,6 +22,12 @@ local SprintStatus = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild
 local NoMana = game.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("NoMana")
 local ServerStorage = game:GetService("ServerStorage")
 
+
+local cdr = Instance.new("Sound")
+cdr.SoundId = "rbxassetid://7545317681"
+
+
+
 local CommonSpells = {
     ["Fireball"] = Spell.New(
         Descriptor.New(
@@ -31,7 +37,7 @@ local CommonSpells = {
             nil
         ),
         "Fireball_Basic",
-        20,
+        27,
         1.13,
         2,
         5,
@@ -39,7 +45,7 @@ local CommonSpells = {
             local attachment = Instance.new("Attachment",part)
             local force = Instance.new("LinearVelocity",attachment)
             force.Name = "Force"
-            force.VectorVelocity = part.CFrame.LookVector * 40
+            force.VectorVelocity = part.CFrame.LookVector * 53
             force.Attachment0 = attachment
         end,
         function(statblock,spell)
@@ -56,6 +62,14 @@ local CommonSpells = {
                 false,
                 0
             )
+
+            
+
+            local sound = Instance.new("Sound")
+            sound.SoundId = "rbxassetid://7278163473"
+            sound.Parent = player.Character
+            sound:Play()
+            sound.Volume = 0.1
 
             task.wait(spell.SpellCasttime * 1.134 - 0.2 * math.sqrt(spell.SpellCasttime))
 
@@ -81,7 +95,16 @@ local CommonSpells = {
             filter:AddToFilter(hitbox)
             filter:AddToFilter(player.Character)            
 
+
+
             local function blowUpFireball()
+
+                local sound2 = Instance.new("Sound")
+                sound2.SoundId = "rbxassetid://7128851174"
+                sound2.Parent = hitbox
+                sound2.PlaybackRegionsEnabled = true
+                sound2.PlayOnRemove = true
+
                 TweenService:Create(hitbox,explodeTween, {Size = Vector3.new(7,7,7)}):Play()
 
                 TweenService:Create(visual.part1,explodeTween, {Size = Vector3.new(7,7,7)}):Play()
@@ -94,6 +117,8 @@ local CommonSpells = {
                 task.wait(0.15)
                 fireballFolder:Destroy()
             end
+
+            
 
             fireballConnection = RunService.Stepped:Connect(function(_currentTime, deltaTime)
                 timeout += deltaTime  
@@ -156,8 +181,11 @@ Rebindable.OnServerEvent:Connect(function(player,code)
                 statblock.DataFolder.CoreStats.Mana.Value -= spell.ManaCost
                 spell:Activate(statblock)
             else
-                NoMana:FireClient(player,spell.Cost/statblock.DataFolder.CoreStats.MaxMana.Value)
+                NoMana:FireClient(player,spell.ManaCost/statblock.DataFolder.CoreStats.MaxMana.Value)
+                cdr:Play()
             end 
+        else
+            cdr:Play()
         end
     end
 end)

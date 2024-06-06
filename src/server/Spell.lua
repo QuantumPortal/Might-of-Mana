@@ -7,6 +7,8 @@ Spell = {}
 Spell.__index = Spell
 
 
+
+
 function Spell.New(descriptor,modelID,manaCost,spellCasttime,spellCooldown,spellDuration,movementBehavior,spellFunction)
     local spell = {}
     setmetatable(spell,Spell)
