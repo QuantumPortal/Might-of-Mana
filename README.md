@@ -1,8 +1,4 @@
-# Project Glogos
-we are not shrimping around
+# Might of Mana
+A Roblox dungeon crawling experience.
 
-# Capstone Project 2024:
-Glenn Dossot
-Adam Kenny
-Feliicytii Duong
-Adrien Li
+Formerly a group project done with Adam Kenny and Adrien Li Pak U.
